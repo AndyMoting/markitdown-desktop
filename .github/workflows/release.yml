@@ -42,7 +42,9 @@ jobs:
           powershell -File build.ps1 -Version $ver -SkipZip -NoPause
 
       - name: Package ZIP
-        run: Compress-Archive -Path dist\MarkItDown\* -DestinationPath MarkItDown.zip
+        run: |
+          $ProgressPreference = 'SilentlyContinue'
+          Compress-Archive -Path dist\MarkItDown\* -DestinationPath MarkItDown.zip
 
       - name: Create Release
         if: startsWith(github.ref, 'refs/tags/v')

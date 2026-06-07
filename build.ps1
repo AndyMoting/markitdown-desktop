@@ -211,7 +211,10 @@ if (-not $SkipZip) {
 
     $zipPath = "$distDir\MarkItDown.zip"
     Write-Host "  Compressing ..."
+    $prevProgress = $ProgressPreference
+    $ProgressPreference = 'SilentlyContinue'
     Compress-Archive -Path "$outDir\*" -DestinationPath $zipPath -Force
+    $ProgressPreference = $prevProgress
     $zipMB = "{0:F0}" -f ((Get-Item $zipPath).Length / 1MB)
     Write-Host "  + ZIP    : $zipMB MB" -ForegroundColor Green
 } else {
