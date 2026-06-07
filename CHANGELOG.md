@@ -2,13 +2,37 @@
 
 ## Infrastructure — 2026-06-07
 
-**文件**: `build.ps1`、`MarkItDown.spec`、`requirements.txt`、`.github/workflows/release.yml`
+**文件**: `build.ps1`、`build.bat`、`MarkItDown.spec`、`requirements.txt`、`.github/workflows/release.yml`、`.gitignore`
 
-- `build.ps1` 重写: 支持 `-Version`/`-SkipZip`/`-NoPause`/`-SkipUPX` 参数，非交互模式适用于 CI
-- `MarkItDown.spec`: PyInstaller 配置独立文件，入口由 build.ps1 按版本动态替换
-- `requirements.txt`: 所有依赖锁定 `==x.y.z` 版本
-- `.github/workflows/release.yml`: 推 tag 自动构建 + Release
-- UPX 自动检测 (`D:\Tools\upx\` 或 PATH)，PyInstaller 自动调用压缩
+**构建系统重写**:
+- `build.bat`: 双击入口，绕过 PS 执行策略，自动调 `build.ps1`
+- `build.ps1` 两种模式:
+  - 交互式: 双击显示版本菜单 + ZIP 选择，按回车即构建
+  - 非交互式: `-Version`/`-SkipZip`/`-NoPause`/`-SkipUPX` 参数，CI 用
+- PyInstaller 输出实时流式显示（`.NET Process` 绕开 PS 5.1 stderr bug）
+- `Compress-Archive` 进度条关闭（`$ProgressPreference = 'SilentlyContinue'`）
+
+**产物与压缩**:
+- UPX 自动检测（`D:\Tools\upx\` 或 PATH），构建时 PyInstaller 自动调用
+- UPX 压缩效果: 文件夹 165→84 MB (-49%), ZIP 80→66 MB (-18%)
+
+**依赖与配置**:
+- `requirements.txt`: 5 个直接依赖 + pyinstaller 全部锁定 `==x.y.z`
+- `MarkItDown.spec`: PyInstaller 独立配置，入口由 build.ps1 按版本号动态替换
+- `upx_exclude`: python312.dll / libcrypto-3.dll / libssl-3.dll（UPX 压缩后可能加载失败）
+
+**CI/CD**:
+- `.github/workflows/release.yml`: 两种触发方式
+  - push tag `v*` → 自动构建 + 发布 GitHub Release
+  - workflow_dispatch → GitHub Actions 页面手动点按钮，选版本号
+- CI 流程: 装 Python 3.12 → 装依赖 → 下载 UPX → 构建 → 打包 ZIP → 创建 Release
+
+**目录整理**:
+- 13 个版本文件移入 `versions/` 子目录
+- 删除: `test_img_out.jpg.jpg`、`kun_v13_plan.md`、`v11_sniffer_review.md`
+- `.gitignore` 补充日志/归档/IDE/OS 文件
+
+
 
 ---
 
@@ -16,7 +40,7 @@
 
 **文件**: `v13_optimize.py`、`doc_engine.py`
 
-**状态**: 纯重构，零功能变更。Kun 优化日志见 `kun_v13_plan.md`。
+**状态**: 纯重构，零功能变更。
 
 **性能优化**:
 - `_convert_thread` 中复用 `MarkItDown()` 实例（批量 N 文件省 N-1 次初始化）
