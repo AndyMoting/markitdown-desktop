@@ -1,6 +1,6 @@
 # ---- parse args ----
 param(
-    [string]$Version = "",        # e.g. "13" or "latest" (default: latest if non-interactive, else prompt)
+    [string]$Version = "",        # e.g. "14", "1.0.0", or "latest"
     [switch]$SkipZip,             # skip ZIP creation
     [switch]$NoPause,             # no Read-Host at end (CI mode)
     [switch]$SkipUPX              # skip UPX compression even if available
@@ -32,12 +32,21 @@ if (-not $VENV) {
 }
 
 # ---- find versions ----
-$pyFiles = Get-ChildItem "$ScriptDir\versions\v*_*.py" |
+$devFiles = Get-ChildItem "$ScriptDir\versions\v*_*.py" -ErrorAction SilentlyContinue |
     Where-Object { $_.Name -match '^v(\d+)_.+\.py$' } |
-    ForEach-Object { [PSCustomObject]@{ Num = [int]($_.Name -replace '^v(\d+)_.+', '$1'); Name = $_.Name } } |
+    ForEach-Object { [PSCustomObject]@{ Num = [int]($_.Name -replace '^v(\d+)_.+', '$1'); Name = $_.Name; Source = 'versions' } } |
     Sort-Object Num
 
-if (-not $pyFiles) { Write-Host "ERROR: No v*_*.py found in $ScriptDir\versions\" -ForegroundColor Red; if (-not $NoPause) { Read-Host "  Press Enter to exit" }; exit 1 }
+$relFiles = Get-ChildItem "$ScriptDir\releases\*.py" -ErrorAction SilentlyContinue |
+    Where-Object { $_.Name -match '^v\d+\.\d+\.\d+\.py$' } |
+    ForEach-Object { [PSCustomObject]@{ Num = [int]([version]($_.BaseName.TrimStart('v'))).Major * 1000; Name = $_.Name; Source = 'releases' } } |
+    Sort-Object Num -Descending
+
+$pyFiles = @()
+if ($relFiles) { $pyFiles += $relFiles }
+$pyFiles += $devFiles
+
+if (-not $pyFiles) { Write-Host "ERROR: No .py found in versions/ or releases/" -ForegroundColor Red; if (-not $NoPause) { Read-Host "  Press Enter to exit" }; exit 1 }
 
 if ($isInteractive) {
     # ---- pick version ----
@@ -45,48 +54,52 @@ if ($isInteractive) {
     Write-Host "  InkDrop  /  build & package" -ForegroundColor Cyan
     Write-Host "==================================================" -ForegroundColor Cyan
     Write-Host ""
-    Write-Host "  Available versions:" -ForegroundColor White
-    Write-Host ""
     for ($i = 0; $i -lt $pyFiles.Count; $i++) {
-        $tag = if ($i -eq $pyFiles.Count - 1) { "  <-- latest" } else { "" }
-        Write-Host "    [$($i+1)]  $($pyFiles[$i].Name)$tag" -ForegroundColor Gray
+        $label = "$($pyFiles[$i].Source)/$($pyFiles[$i].Name)"
+        $color = if ($pyFiles[$i].Source -eq 'releases') { "Green" } else { "Gray" }
+        $tag = if ($i -eq 0 -and $pyFiles[$i].Source -eq 'releases') { "  <-- latest" } else { "" }
+        Write-Host "    [$($i+1)]  $label$tag" -ForegroundColor $color
     }
     Write-Host ""
     $choice = Read-Host "  Pick version [Enter = latest]"
     if ($choice -match '^\d+$' -and [int]$choice -ge 1 -and [int]$choice -le $pyFiles.Count) {
-        $ENTRY = $pyFiles[[int]$choice - 1].Name
+        $selected = $pyFiles[[int]$choice - 1]
     } else {
-        $ENTRY = $pyFiles[-1].Name
+        $selected = $pyFiles[0]
     }
 
     # ---- ZIP ----
     Write-Host ""
     $zipChoice = Read-Host "  Generate ZIP? [Y]es (default)  or  [N]o"
     $SkipZip = ($zipChoice -eq 'n' -or $zipChoice -eq 'N')
-
-    Write-Host ""
-    Write-Host "  -> $ENTRY" -ForegroundColor Cyan
     Write-Host ""
 
 } else {
     # non-interactive: resolve version param
     if ($Version -eq '' -or $Version -eq 'latest') {
-        $ENTRY = $pyFiles[-1].Name
+        $selected = $pyFiles[0]
     } elseif ($Version -match '^\d+$') {
-        $match = $pyFiles | Where-Object { $_.Num -eq [int]$Version }
-        if ($match) { $ENTRY = $match.Name }
-        else { Write-Host "ERROR: v${Version}_*.py not found" -ForegroundColor Red; if (-not $NoPause) { Read-Host "  Press Enter to exit" }; exit 1 }
+        $match = $pyFiles | Where-Object { $_.Source -eq 'versions' -and $_.Num -eq [int]$Version }
+        if ($match) { $selected = $match }
+        else { Write-Host "ERROR: versions/v${Version}_*.py not found" -ForegroundColor Red; exit 1 }
+    } elseif ($Version -match '^\d+\.\d+\.\d+$') {
+        $match = $pyFiles | Where-Object { $_.Source -eq 'releases' -and $_.Name -eq "v$Version.py" }
+        if ($match) { $selected = $match }
+        else { Write-Host "ERROR: releases/v${Version}.py not found" -ForegroundColor Red; exit 1 }
     } else {
-        Write-Host "ERROR: -Version must be a number or 'latest'" -ForegroundColor Red; if (-not $NoPause) { Read-Host "  Press Enter to exit" }; exit 1
+        Write-Host "ERROR: -Version must be a number, semver (1.0.0), or 'latest'" -ForegroundColor Red; exit 1
     }
 }
+
+$ENTRY_SOURCE = $selected.Source
+$ENTRY = $selected.Name
 
 # ---- banner ----
 $banner = @"
 ==================================================
   InkDrop  /  build & package
 ==================================================
-  Source : $ENTRY
+  Source : $ENTRY_SOURCE/$ENTRY
   Venv   : $VENV
 "@
 Write-Host $banner -ForegroundColor Cyan
@@ -99,7 +112,6 @@ if (-not $SkipUPX) {
         $UPX_DIR = Split-Path -Parent $upxExe
         Write-Host "  UPX    : $upxExe" -ForegroundColor Green
     } else {
-        # check common locations
         $candidates = @(
             "D:\Tools\upx\upx.exe",
             "C:\Tools\upx\upx.exe",
@@ -119,16 +131,17 @@ if (-not $SkipUPX) {
 }
 
 Write-Host ""
+$srcPath = "$ScriptDir\$ENTRY_SOURCE\$ENTRY"
 
 # ---- step 0: update spec ----
 $specPath = "$ScriptDir\InkDrop.spec"
 if (Test-Path $specPath) {
     $specContent = Get-Content $specPath -Raw
-    $specContent = $specContent -replace "\[.*v\d+_.+\.py.*\]", "['versions/$ENTRY']"
+    $specContent = $specContent -replace "\[.*\].*#.*build.ps1.*", "['$ENTRY_SOURCE/$ENTRY'],         # <-- build.ps1 replaces this line per version"
     $specContent | Set-Content $specPath -Encoding UTF8 -NoNewline
-    Write-Host "  [0/3] Updated spec entry -> versions/$ENTRY" -ForegroundColor Gray
+    Write-Host "  [0/3] Updated spec entry -> $ENTRY_SOURCE/$ENTRY" -ForegroundColor Gray
 } else {
-    Write-Host "  [0/3] Generating spec from $ENTRY ..." -ForegroundColor Gray
+    Write-Host "  [0/3] Generating spec from $ENTRY_SOURCE/$ENTRY ..." -ForegroundColor Gray
     $makespecArgs = @(
         '--onedir', '--name', 'InkDrop', '--noconfirm', '--windowed',
         '--hidden-import', 'fitz', '--hidden-import', 'pymupdf',
@@ -138,7 +151,7 @@ if (Test-Path $specPath) {
         '--exclude-module', 'pypdfium2', '--exclude-module', 'pypdfium2_raw',
         '--exclude-module', 'magika', '--exclude-module', 'onnxruntime',
         '--exclude-module', 'flatbuffers', '--exclude-module', 'protobuf',
-        '--specpath', $ScriptDir, "$ScriptDir\versions\$ENTRY"
+        '--specpath', $ScriptDir, $srcPath
     )
     & $VENV -m PyInstaller @makespecArgs 2>&1 | Select-Object -Last 3
     if ($LASTEXITCODE -ne 0) { Write-Host "  ERROR: spec generation failed" -ForegroundColor Red; exit 1 }
@@ -160,9 +173,6 @@ $pyiArgs = @($specPath, '--noconfirm', '--clean')
 if ($UPX_DIR) { $pyiArgs += '--upx-dir'; $pyiArgs += $UPX_DIR }
 if (-not (Test-Path $buildDir)) { New-Item -ItemType Directory -Force $buildDir | Out-Null }
 
-# PyInstaller writes all progress to stderr. PS 5.1 wraps native stderr as
-# NativeCommandError. Use .NET Process directly to stream stderr in real-time
-# without PS interference.
 $pyiFullArgs = @('-m', 'PyInstaller') + $pyiArgs + @('--distpath', $distDir, '--workpath', $buildDir)
 $psi = New-Object System.Diagnostics.ProcessStartInfo
 $psi.FileName = $VENV
@@ -173,7 +183,6 @@ $psi.RedirectStandardOutput = $false
 $psi.CreateNoWindow = $true
 $proc = [System.Diagnostics.Process]::Start($psi)
 
-# Read stderr line-by-line, print in real-time
 while (-not $proc.StandardError.EndOfStream) {
     $line = $proc.StandardError.ReadLine()
     if ($line) { Write-Host $line }
