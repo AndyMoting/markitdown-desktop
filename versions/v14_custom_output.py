@@ -1075,7 +1075,7 @@ class MarkItDownApp:
             if self.cancel_event.is_set():
                 self.root.after(0, self._append_result,
                                 f"已取消 ({i}/{total})", "summary")
-                self.root.after(0, self._on_all_done, i, total, cancelled=True)
+                self.root.after(0, self._on_all_done, i, total, True)
                 return
 
             filename = os.path.basename(fp)
@@ -1097,7 +1097,7 @@ class MarkItDownApp:
             if self.cancel_event.is_set():
                 self.root.after(0, self._append_result,
                                 f"已取消 ({i}/{total})", "summary")
-                self.root.after(0, self._on_all_done, i, total, cancelled=True)
+                self.root.after(0, self._on_all_done, i, total, True)
                 return
 
             if result.ok:
@@ -1127,7 +1127,7 @@ class MarkItDownApp:
             self.root.after(0, self._append_result,
                             "提示: 可在 设置 → 打开日志目录 查看详细诊断信息",
                             "progress")
-        self.root.after(0, self._on_all_done, total, total, cancelled=False)
+        self.root.after(0, self._on_all_done, total, total, False)
 
     def _update_progress(self, done: int, total: int):
         if not self.root.winfo_exists():

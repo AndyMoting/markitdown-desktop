@@ -1,5 +1,18 @@
 # CHANGELOG
 
+## v1.0.1 — 2026-06-08
+
+**致命修复**: `root.after()` 关键字参数 bug。
+
+- `_convert_thread` 中 `root.after(0, self._on_all_done, ..., cancelled=False)` 的 `cancelled=` 被 tkinter 当作传给 `after()` 的关键字参数（而非传给回调），触发 `TypeError` 导致工作线程崩溃
+- `_on_all_done` 永不执行 → `self.running` 永远为 `True` → 所有 UI 按钮失效
+- **引入版本**: v7（首次 `_on_all_done` 添加 `cancelled` 参数），v7–v1.0.0 全受影响
+- **修复**: `cancelled=False` → 位置参数 `False`，同理 `cancelled=True` → `True`
+
+**文件**: `releases/v1.0.0.py`、`versions/v14_custom_output.py`
+
+---
+
 ## Infrastructure — 2026-06-07
 
 **文件**: `build.ps1`、`build.bat`、`InkDrop.spec`、`requirements.txt`、`.github/workflows/release.yml`、`.gitignore`
