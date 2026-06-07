@@ -33,19 +33,21 @@ python -c "from markitdown import MarkItDown; print(MarkItDown().convert('file.p
 
 ## 怎么做的
 
-约束就一个：一个 exe，不用装 Python，能跑。每个选择从这个约束出发，退路通常也只有一条。
+约束就一个：一个 exe，不用装 Python，能跑。
 
-GUI 没得选。PyQt 要商业授权，Electron 打包 200MB。tkinter 丑，但 Python 自带，打包零配置。
+每个选择退路都只有一条，意味着每个方案在动手前就要想清楚代价再接受。不是解决才冒出来的问题，是提前看到了前面的坑。
 
-PDF 一个引擎不够。pdfplumber 中文常乱码且不碰图片，PyMuPDF 中文好但 AGPL。两个都跑，比乱码率自动选优。PyMuPDF 拆到 [pdf_engine.py](pdf_engine.py)，跟 MIT 代码隔离。
+GUI 没得选。PyQt 要商业授权，Electron 打包 200MB。tkinter 丑，但 Python 自带、打包零配置。
 
-.doc 是捡来的。准备放弃了，碰巧搜到 aspose-words-foss（MIT），纯 Python 能转。`.doc → aspose → .docx → markitdown`，用户无感。
+PDF 单一引擎是残次品——pdfplumber 中文常乱码，PyMuPDF 中文好但 AGPL 协议。两个都跑、自动选优、隔离代码——这是约束下的最优解，不是堆功能。PyMuPDF 拆到 [pdf_engine.py](pdf_engine.py)，跟 MIT 隔离。
 
-文件检测不用 magika。自带 Google 的 AI 模型，打包 42MB。filetype.py 几 KB 干一样的事。[sniffer.py](sniffer.py) 桥接，开发时用 magika，打包后切 filetype。
+.doc 是捡来的。准备放弃时碰巧搜到 aspose-words-foss（MIT），纯 Python 能转。`.doc → aspose → .docx → markitdown`，用户无感。
+
+文件检测不用 magika。 Google 的 AI 模型打包 42MB，filetype.py 几 KB 干一样的事。[sniffer.py](sniffer.py) 桥接——开发时用 magika，打包自动切 filetype。
 
 打包 onedir 不用 onefile。onefile 启动 8 秒，onedir 秒开，UPX 压到 84MB，U 盘直接跑。
 
-[pdf_engine.py](pdf_engine.py)、[doc_engine.py](doc_engine.py)、[sniffer.py](sniffer.py) 各管一块，GUI 和 [doc2md.py](doc2md.py) CLI 共享同一套逻辑。[build.bat](build.bat) 双击选版本，[build.ps1](build.ps1) 给 CI。
+[pdf_engine.py](pdf_engine.py)、[doc_engine.py](doc_engine.py)、[sniffer.py](sniffer.py) 各管一块，GUI 和 [doc2md.py](doc2md.py) CLI 共享同一套核心。[build.bat](build.bat) 双击选版本，[build.ps1](build.ps1) 给 CI。
 
 ## 项目结构
 
