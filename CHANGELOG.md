@@ -1,5 +1,17 @@
 # CHANGELOG
 
+## Infrastructure — 2026-06-07
+
+**文件**: `build.ps1`、`MarkItDown.spec`、`requirements.txt`、`.github/workflows/release.yml`
+
+- `build.ps1` 重写: 支持 `-Version`/`-SkipZip`/`-NoPause`/`-SkipUPX` 参数，非交互模式适用于 CI
+- `MarkItDown.spec`: PyInstaller 配置独立文件，入口由 build.ps1 按版本动态替换
+- `requirements.txt`: 所有依赖锁定 `==x.y.z` 版本
+- `.github/workflows/release.yml`: 推 tag 自动构建 + Release
+- UPX 自动检测 (`D:\Tools\upx\` 或 PATH)，PyInstaller 自动调用压缩
+
+---
+
 ## v13 — 2026-06-07 (Kun / DeepSeek v4 Pro)
 
 **文件**: `v13_optimize.py`、`doc_engine.py`

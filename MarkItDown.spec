@@ -1,26 +1,26 @@
-# -*- mode: python ; coding: utf-8 -*-
+﻿# -*- mode: python ; coding: utf-8 -*-
 """
-MarkItDown GUI — PyInstaller spec
-入口由 build.ps1 按版本号动态替换，不要手动改 a.scripts。
+MarkItDown GUI - PyInstaller spec
+Entry script updated by build.ps1 per version. Do not edit a.scripts by hand.
 """
 
 a = Analysis(
-    ['v13_optimize.py'],                           # ← build.ps1 按版本替换此行
+    ['v13_optimize.py'],                           # <-- build.ps1 replaces this line per version
     pathex=[],
     binaries=[],
     datas=[],
     hiddenimports=[
-        'fitz', 'pymupdf',                        # PDF 引擎
-        'sniffer', 'filetype',                     # magika→filetype shim
-        'pdf_engine', 'doc_engine',                # 薄接口
-        'aspose.words_foss',                       # .doc 转换
+        'fitz', 'pymupdf',                        # PDF engine (PyMuPDF)
+        'sniffer', 'filetype',                     # magika -> filetype shim
+        'pdf_engine', 'doc_engine',                # thin wrappers
+        'aspose.words_foss',                       # .doc conversion
     ],
     hookspath=[],
     hooksconfig={},
     runtime_hooks=[],
     excludes=[
-        'pypdfium2', 'pypdfium2_raw',              # 白占 7MB
-        'magika', 'onnxruntime', 'flatbuffers', 'protobuf',  # filetype shim 替代, 省 ~42MB
+        'pypdfium2', 'pypdfium2_raw',              # unused, saves ~7MB
+        'magika', 'onnxruntime', 'flatbuffers', 'protobuf',  # filetype shim, saves ~42MB
     ],
     noarchive=False,
     optimize=0,
@@ -37,7 +37,7 @@ exe = EXE(
     debug=False,
     bootloader_ignore_signals=False,
     strip=False,
-    upx=True,                                      # UPX 可用时自动压缩
+    upx=True,                                      # UPX compresses if available
     console=False,                                 # --windowed
     disable_windowed_traceback=False,
     argv_emulation=False,
@@ -53,7 +53,7 @@ coll = COLLECT(
     strip=False,
     upx=True,
     upx_exclude=[
-        'python312.dll',                           # UPX 压缩后可能加载失败
+        'python312.dll',                           # UPX may break loading
         'libcrypto-3.dll',
         'libssl-3.dll',
     ],

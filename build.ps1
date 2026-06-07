@@ -1,5 +1,3 @@
-$ErrorActionPreference = "Stop"
-
 # ---- parse args ----
 param(
     [string]$Version = "",        # e.g. "13" or "latest" (default: latest if non-interactive, else prompt)
@@ -8,6 +6,7 @@ param(
     [switch]$SkipUPX              # skip UPX compression even if available
 )
 
+$ErrorActionPreference = "Stop"
 $ScriptDir = Split-Path -Parent $MyInvocation.MyCommand.Path
 $isCI = $NoPause -or ($env:CI -eq 'true')
 
@@ -123,10 +122,18 @@ $sw = [System.Diagnostics.Stopwatch]::StartNew()
 $pyiArgs = @($specPath, '--noconfirm', '--clean')
 if ($UPX_DIR) { $pyiArgs += '--upx-dir'; $pyiArgs += $UPX_DIR }
 if (-not (Test-Path $buildDir)) { New-Item -ItemType Directory -Force $buildDir | Out-Null }
-& $VENV -m PyInstaller @pyiArgs --distpath "$distDir" --workpath "$buildDir"
 
-if ($LASTEXITCODE -ne 0) {
-    Write-Host "`n  Build FAILED" -ForegroundColor Red
+# PyInstaller writes all progress to stderr. PS 5.1 wraps native stderr as
+# NativeCommandError, which with $ErrorActionPreference="Stop" kills the build.
+# Temporarily switch to Continue, then check real exit code.
+$prevEAP = $ErrorActionPreference
+$ErrorActionPreference = "Continue"
+& $VENV -m PyInstaller @pyiArgs --distpath "$distDir" --workpath "$buildDir"
+$exitCode = $LASTEXITCODE
+$ErrorActionPreference = $prevEAP
+
+if ($exitCode -ne 0) {
+    Write-Host "`n  Build FAILED (exit $exitCode)" -ForegroundColor Red
     if (-not $NoPause) { Read-Host }
     exit 1
 }
