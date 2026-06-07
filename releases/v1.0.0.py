@@ -519,7 +519,7 @@ class MarkItDownApp:
         self.cancel_event = threading.Event()
         self._result_folders: list[str] = []
 
-        self.root.title(f"📝 InkDrop v{VERSION}")
+        self.root.title(f"InkDrop v{VERSION}")
         self.root.resizable(True, True)
         self.root.minsize(700, 560)
         self._restore_or_center(700, 560)

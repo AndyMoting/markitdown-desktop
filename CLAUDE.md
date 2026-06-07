@@ -4,6 +4,7 @@
 
 ## 铁律
 
+- **commit 不加 Co-Authored-By**，不挂 AI 名字在贡献者列表
 - **版本独立文件** `versions/vN_xxx.py`，历史快照，不修不改不合入。后续只改 `releases/v*py`
 - `CHANGELOG.md` 每版必记
 - 先写计划
