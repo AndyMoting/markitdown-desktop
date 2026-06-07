@@ -16,7 +16,6 @@ import os
 import re
 import sys
 import time
-import traceback
 from pathlib import Path
 
 # Fix Windows GBK encoding if needed
@@ -140,11 +139,13 @@ def _text_diff_ratio(a: str, b: str, sample_len: int = 4000) -> float:
 
 
 # ---- PDF engine ----
-def _pdf_extract_images(pdf_path: str, images_dir: str) -> tuple[int, dict]:
+def _pdf_extract_images(pdf_path: str, images_dir: str, doc=None) -> tuple[int, dict]:
     fitz = _get_fitz()
     if fitz is None:
         return 0, {}
-    doc = fitz.open(pdf_path)
+    should_close = doc is None
+    if doc is None:
+        doc = fitz.open(pdf_path)
     page_images: dict[int, list[str]] = {}
     total = 0
     seen_xref: set[int] = set()
@@ -180,15 +181,18 @@ def _pdf_extract_images(pdf_path: str, images_dir: str) -> tuple[int, dict]:
             if page_imgs:
                 page_images[page_num + 1] = page_imgs
     finally:
-        doc.close()
+        if should_close:
+            doc.close()
     return total, page_images
 
 
-def _pdf_extract_text(pdf_path: str) -> str:
+def _pdf_extract_text(pdf_path: str, doc=None) -> str:
     fitz = _get_fitz()
     if fitz is None:
         return ""
-    doc = fitz.open(pdf_path)
+    should_close = doc is None
+    if doc is None:
+        doc = fitz.open(pdf_path)
     pages: list[str] = []
     try:
         for page_num in range(len(doc)):
@@ -197,7 +201,8 @@ def _pdf_extract_text(pdf_path: str) -> str:
             if text.strip():
                 pages.append(text)
     finally:
-        doc.close()
+        if should_close:
+            doc.close()
     return "\n\n".join(pages)
 
 
@@ -239,9 +244,11 @@ def _make_output_dir(output_root: str, base_name: str) -> str:
             counter += 1
 
 
-def convert_one(filepath: str, output_root: str | None = None) -> dict:
+def convert_one(filepath: str, output_root: str | None = None,
+                md=None) -> dict:
     """Convert a single file to Markdown.
 
+    Pass a pre-created MarkItDown() instance as *md* to reuse across files.
     Returns dict with keys: ok, output_dir, image_count, warning, error
     """
     from markitdown import MarkItDown
@@ -280,8 +287,9 @@ def convert_one(filepath: str, output_root: str | None = None) -> dict:
                 "error": "旧版 PowerPoint (.ppt) 不支持。请用 PowerPoint 另存为 .pptx 后重试。"}
 
     # markitdown
-    try:
+    if md is None:
         md = MarkItDown()
+    try:
         result = md.convert(source_path, keep_data_uris=True)
         text, img_count = _extract_images(result.text_content or "", images_dir)
     except Exception as e:
@@ -307,7 +315,7 @@ def convert_one(filepath: str, output_root: str | None = None) -> dict:
         if fitz is not None:
             fitz_doc = fitz.open(filepath)
             try:
-                pymupdf_text = _pdf_extract_text(filepath)
+                pymupdf_text = _pdf_extract_text(filepath, doc=fitz_doc)
                 if pymupdf_text:
                     diff = _text_diff_ratio(text, pymupdf_text)
                     garbled_a = _garbled_ratio(text)
@@ -317,7 +325,7 @@ def convert_one(filepath: str, output_root: str | None = None) -> dict:
                     if diff > 0.3 and garbled_b < garbled_a:
                         text = pymupdf_text
                         warning = "文字已用备用引擎修正"
-                pdf_img_count, page_images = _pdf_extract_images(filepath, images_dir)
+                pdf_img_count, page_images = _pdf_extract_images(filepath, images_dir, doc=fitz_doc)
                 if pdf_img_count > 0:
                     lines = ["", "---", "", "## PDF 内嵌图片", "",
                              f"_从 PDF 提取了 {pdf_img_count} 张图片。_", ""]
@@ -380,6 +388,8 @@ Requires: markitdown pdfplumber PyMuPDF aspose-words-foss (pip install)
     if args.no_pymupdf:
         _CONFIG["pymupdf_accepted"] = False
 
+    from markitdown import MarkItDown
+    md = MarkItDown()
     ok = warn = fail = 0
     t0_total = time.time()
     for fp in args.files:
@@ -390,7 +400,7 @@ Requires: markitdown pdfplumber PyMuPDF aspose-words-foss (pip install)
         print(f"-> {os.path.basename(fp)} ...", flush=True)
         t0 = time.time()
         try:
-            r = convert_one(fp, args.out)
+            r = convert_one(fp, args.out, md=md)
             elapsed = time.time() - t0
             if r["ok"]:
                 msg = f"[OK]  {r['output_dir']}"
