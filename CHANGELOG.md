@@ -27,12 +27,15 @@
   - workflow_dispatch → GitHub Actions 页面手动点按钮，选版本号
 - CI 流程: 装 Python 3.12 → 装依赖 → 下载 UPX → 构建 → 打包 ZIP → 创建 Release
 
+**改名**:
+- 项目名 MarkItDown GUI → InkDrop
+- APP_NAME `markitdown-gui` → `inkdrop`，窗口标题 `InkDrop v{VERSION}`
+- exe `MarkItDown.exe` → `InkDrop.exe`，spec/ZIP 同步改名
+
 **目录整理**:
 - 13 个版本文件移入 `versions/` 子目录
 - 删除: `test_img_out.jpg.jpg`、`kun_v13_plan.md`、`v11_sniffer_review.md`
 - `.gitignore` 补充日志/归档/IDE/OS 文件
-
-
 
 ---
 
@@ -59,11 +62,6 @@
 
 **死代码清理**:
 - `doc_engine.py` 删除 `doc_to_text()` 和 `save_to_markdown()`（从未被调用）
-
-**注意给 Claude**:
-- `_convert_one` 新签名: `(filepath, save_to_tool, md=None)`，第三个参数传入复用的 MarkItDown 实例
-- 如需还原死代码，从 git/v12 历史恢复
-
 
 ## v12 — 2026-06-07
 

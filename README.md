@@ -4,7 +4,7 @@
 
 ## 下载
 
-[Releases](https://github.com//MD/releases) 下载 `InkDrop.zip`，解压运行 `InkDrop.exe`，无需安装。
+[Releases](https://github.com/你的用户名/md/releases) 下载 `InkDrop.zip`，解压运行 `InkDrop.exe`，无需安装。
 
 ## 支持的格式
 

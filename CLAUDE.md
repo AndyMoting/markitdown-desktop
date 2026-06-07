@@ -4,29 +4,32 @@
 
 ## 铁律
 
-- **每个版本独立文件** `vN_xxx.py`，绝不在旧版上改
+- **每个版本独立文件** `versions/vN_xxx.py`，绝不在旧版上改
 - `CHANGELOG.md` 每版必记
 - 先写计划
 - 新建 venv 后先 `pip install -r requirements.txt`，否则所有文件都报 ModuleNotFoundError
+- `_convert_one` 签名: `(filepath, save_to_tool, md=None)`，第三个参数传入复用的 MarkItDown 实例。CLI 的 `_headless_convert` 同理复用
 
 ## 运行环境
 
 - venv: `D:\Projects\.venv\Scripts\python.exe`（Python 3.12）
-- 依赖见 `requirements.txt`，全部 MIT/BSD
+- 依赖见 `requirements.txt`。PyMuPDF (AGPL) 已隔离，可替换；其余 MIT/BSD。
 
 ## 当前状态（2026-06-07）
 
 ```
 D:\Projects\MD\
-├── CHANGELOG.md
-├── CLAUDE.md
+├── README.md           # 对外
+├── CHANGELOG.md        # 对内，每版必记
+├── CLAUDE.md           # 本文件
 ├── requirements.txt
 ├── pdf_engine.py       # PDF 引擎薄接口 (PyMuPDF)
 ├── doc_engine.py       # DOC 引擎薄接口 (aspose-words-foss)
 ├── sniffer.py          # magika→filetype shim
 ├── InkDrop.spec        # PyInstaller 配置
-├── build.bat           # 双击构建入口
-├── build.ps1           # 打包脚本 (交互/CI 双模式)
+├── build.bat / build.ps1  # 双击/CLI 构建
+├── .github/workflows/  # CI（tag 触发自动发版）
+├── .gitignore
 ├── versions/           # 各版本源码
 │   ├── v1_demo.py
 │   ├── ...
@@ -52,9 +55,20 @@ D:\Projects\MD\
 | v12 | doc_engine (.doc 支持) + 代码全面清理 | done |
 | v13 | _convert_one 拆分为 6 函数 + MarkItDown 实例复用 + 去死代码 | done |
 
-## 依赖
+## 构建与发布
 
-见 `requirements.txt`。PyMuPDF (AGPL) 已通过 pdf_engine.py 隔离，aspose-words-foss (MIT) 处理 .doc，其余 MIT/BSD。
+- 双击 `build.bat` 交互式构建（选版本+ZIP），命令行 `.\build.ps1 -Version latest -NoPause`
+- UPX 装到 `D:\Tools\upx\`，构建时自动压缩（165→84 MB）
+- CI: push tag `v*` 自动构建 + Release；也可 GitHub Actions 页面手动触发
+- exe 名 `InkDrop.exe`，输出 `dist\InkDrop\`，ZIP `dist\InkDrop.zip`
+- PyInstaller stderr 用 .NET Process 流式输出（PS 5.1 兼容）
+
+## 改名记录 (2026-06-07)
+
+- 项目名 MarkItDown GUI → InkDrop
+- APP_NAME `markitdown-gui` → `inkdrop`（config/log 目录随之改变）
+- 类名 `MarkItDownApp` 保留不动（库名，旧版本同理）
+- 窗口标题 `InkDrop v{VERSION}`
 
 ## 格式支持
 
