@@ -65,5 +65,6 @@ D:\Projects\MD\
 | DOCX | ✅ | ✅ | ✅ |
 | PPTX | ✅ | ✅ | ✅ |
 | XLSX/XLS | ✅ | ✅ | ❌ |
+| 图片/邮件/ZIP | ❓ 未实测 |
 | PPT | ❌ | ❌ | ❌ (提示用户另存 .pptx) |
 

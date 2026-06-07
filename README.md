@@ -12,7 +12,8 @@
 | PPTX | ✅ | ✅ | ✅ |
 | XLSX / XLS | ✅ | ✅ | ❌ |
 | HTML / CSV / JSON / XML / TXT | ✅ | ❌ | ❌ |
-| 图片 / 邮件 / ZIP | ✅ | ❌ | ❌ |
+| 图片 / 邮件 / ZIP | ❓ 未实测，markitdown 声称支持 |
+| PPT | ❌ 提示用户另存为 .pptx | | |
 | PPT | ❌ 提示用户另存为 .pptx | | |
 
 - 批量转换 + 拖拽添加文件
