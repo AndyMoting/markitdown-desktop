@@ -52,10 +52,13 @@ from tkinterdnd2 import TkinterDnD
 from markitdown import MarkItDown
 
 # ============================================================
-#  1. config  配置读写 (%APPDATA%\inkdrop\)
+#  1. config  配置读写 (exe 同级 config/ 目录)
 # ============================================================
 
-_CONFIG_DIR = Path(os.environ.get("APPDATA", os.path.expanduser("~"))) / APP_NAME
+if getattr(sys, "frozen", False):
+    _CONFIG_DIR = Path(sys.executable).parent / "config"
+else:
+    _CONFIG_DIR = Path(__file__).resolve().parent / "config"
 _CONFIG_FILE = _CONFIG_DIR / "config.json"
 _DEFAULT_CONFIG = {
     "pymupdf_accepted": None,
@@ -994,6 +997,13 @@ class MarkItDownApp:
             row=r, column=0, columnspan=2, sticky=tk.W, padx=(8, 0), pady=(4, 2))
         r += 1
 
+        # 配置目录
+        ttk.Label(body,
+                  text=f"配置目录: {_CONFIG_DIR}",
+                  foreground="gray", font=("", 8)).grid(
+            row=r, column=0, columnspan=2, sticky=tk.W, padx=(8, 0), pady=(0, 4))
+        r += 1
+
         # 按钮行
         actions = ttk.Frame(body)
         actions.grid(row=r, column=0, columnspan=2, sticky=tk.EW, pady=(6, 2))
@@ -1004,8 +1014,14 @@ class MarkItDownApp:
                 _LOG_DIR.mkdir(parents=True, exist_ok=True)
             os.startfile(str(_LOG_DIR))
 
+        def open_config_dir():
+            _CONFIG_DIR.mkdir(parents=True, exist_ok=True)
+            os.startfile(str(_CONFIG_DIR))
+
         ttk.Button(actions, text="打开日志目录",
                    command=open_log_dir).pack(side=tk.LEFT, padx=(8, 0))
+        ttk.Button(actions, text="打开配置目录",
+                   command=open_config_dir).pack(side=tk.LEFT, padx=(4, 0))
         ttk.Button(actions, text="关闭", command=dialog.destroy,
                    width=8).pack(side=tk.RIGHT, padx=(0, 8))
 
