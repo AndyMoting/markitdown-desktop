@@ -30,10 +30,12 @@ D:\Projects\MD\
 ├── build.bat / build.ps1  # 双击/CLI 构建
 ├── .github/workflows/  # CI（tag 触发自动发版）
 ├── .gitignore
-├── versions/           # 各版本源码
+├── versions/           # 开发迭代
 │   ├── v1_demo.py
 │   ├── ...
-│   └── v14_custom_output.py  # 当前版本
+│   └── v14_custom_output.py
+├── releases/           # 发布版本
+│   └── v1.0.0.py       # 当前发布
 └── samples/
 ```
 
@@ -54,7 +56,8 @@ D:\Projects\MD\
 | v11 | pdf_engine + sniffer + 修 ~16 bug + onedir 打包 (160MB) | done |
 | v12 | doc_engine (.doc 支持) + 代码全面清理 | done |
 | v13 | _convert_one 拆分为 6 函数 + MarkItDown 实例复用 + 去死代码 | done |
-| v14 | 自定义输出目录 | done |
+| v14 | 自定义输出目录、config 移 exe 同级 | done |
+| v1.0.0 | 首次正式发布 | done |
 
 ## 构建与发布
 
@@ -67,7 +70,7 @@ D:\Projects\MD\
 ## 改名记录 (2026-06-07)
 
 - 项目名 MarkItDown GUI → InkDrop
-- APP_NAME `markitdown-gui` → `inkdrop`（config/log 目录随之改变）
+- APP_NAME `markitdown-gui` → `inkdrop`
 - 类名 `MarkItDownApp` 保留不动（库名，旧版本同理）
 - 窗口标题 `InkDrop v{VERSION}`
 
