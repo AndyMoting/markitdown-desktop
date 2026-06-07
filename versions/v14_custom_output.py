@@ -1207,6 +1207,7 @@ def _show_pymupdf_dialog(args):
 
     root = tk.Tk()
     root.withdraw()
+    root.attributes("-topmost", True)
     choice = messagebox.askyesno(
         "可选组件: PyMuPDF",
         "PyMuPDF (AGPL-3.0) 用于提取 PDF 内嵌图片。\n\n"
@@ -1282,6 +1283,8 @@ def main(argv: list[str] | None = None):
     _show_pymupdf_dialog(args)
     root = TkinterDnD.Tk()
     MarkItDownApp(root)
+    root.lift()
+    root.focus_force()
     root.mainloop()
 
 
