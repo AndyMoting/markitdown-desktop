@@ -17,6 +17,14 @@
 
 **文件**: `releases/v1.0.0.py`、`versions/v14_custom_output.py`、`doc_engine.py`、`pdf_engine.py`
 
+**修复**: exe 打包缺失 aspose blank.docx -> .doc 转换失败。
+
+- `aspose-words-foss` 运行时依赖 `docx_writer/resources/blank.docx`，PyInstaller 不自动收集非 Python 数据文件
+- `InkDrop.spec` `datas` 加入该文件，通过 `site.getsitepackages()` 动态查找路径
+- 同时移除 spec 文件的 BOM 头
+
+**文件**: `InkDrop.spec`
+
 ---
 
 ## Infrastructure — 2026-06-07
