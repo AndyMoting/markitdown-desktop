@@ -1,4 +1,4 @@
-# InkDrop
+# 📝 InkDrop
 
 文档转 Markdown 桌面工具。拖拽文件进来，一键转成 Markdown，图片自动提取为独立文件。
 
@@ -22,7 +22,7 @@
 1. 打开 `InkDrop.exe`
 2. 拖拽文件进来（或点 Add Files）
 3. 点 Convert，等待完成
-4. 输出在每个文件的 `*_converted/` 子目录
+4. 输出在每个文件的 `*_md/` 子目录
 
 支持批量转换、取消、窗口位置记忆。
 

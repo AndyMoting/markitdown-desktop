@@ -39,6 +39,16 @@
 
 ---
 
+## v14 — 2026-06-08
+
+**文件**: `v14_custom_output.py`
+
+**新增**:
+- 自定义输出目录: 设置界面可选输出目录, 空格保持默认(输出到源文件旁边)
+- config 新增 `output_dir` 字段
+
+--- 
+
 ## v13 — 2026-06-07 (Kun / DeepSeek v4 Pro)
 
 **文件**: `v13_optimize.py`、`doc_engine.py`

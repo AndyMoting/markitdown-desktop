@@ -15,7 +15,7 @@
 - venv: `D:\Projects\.venv\Scripts\python.exe`（Python 3.12）
 - 依赖见 `requirements.txt`。PyMuPDF (AGPL) 已隔离，可替换；其余 MIT/BSD。
 
-## 当前状态（2026-06-07）
+## 当前状态（2026-06-08）
 
 ```
 D:\Projects\MD\
@@ -33,7 +33,7 @@ D:\Projects\MD\
 ├── versions/           # 各版本源码
 │   ├── v1_demo.py
 │   ├── ...
-│   └── v13_optimize.py  # 当前版本
+│   └── v14_custom_output.py  # 当前版本
 └── samples/
 ```
 
@@ -54,6 +54,7 @@ D:\Projects\MD\
 | v11 | pdf_engine + sniffer + 修 ~16 bug + onedir 打包 (160MB) | done |
 | v12 | doc_engine (.doc 支持) + 代码全面清理 | done |
 | v13 | _convert_one 拆分为 6 函数 + MarkItDown 实例复用 + 去死代码 | done |
+| v14 | 自定义输出目录 | done |
 
 ## 构建与发布
 
