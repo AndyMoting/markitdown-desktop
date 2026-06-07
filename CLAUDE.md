@@ -60,10 +60,10 @@ D:\Projects\MD\
 
 | 格式 | 文字 | 表格 | 图片 |
 |------|------|------|------|
-| PDF | v | v | v (内嵌图片) |
-| DOC | v | v | v (doc_engine→.docx 管线) |
-| DOCX | v | v | v |
-| PPTX | v | v | v |
-| XLSX/XLS | v | v | - |
-| PPT | - | - | - (提示用户另存 .pptx) |
+| PDF | ✅ | ✅ | ✅ (内嵌图片) |
+| DOC | ✅ | ✅ | ✅ (doc_engine→.docx 管线) |
+| DOCX | ✅ | ✅ | ✅ |
+| PPTX | ✅ | ✅ | ✅ |
+| XLSX/XLS | ✅ | ✅ | ❌ |
+| PPT | ❌ | ❌ | ❌ (提示用户另存 .pptx) |
 

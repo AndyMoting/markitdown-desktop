@@ -6,14 +6,14 @@
 
 | 格式 | 文字 | 表格 | 图片 |
 |------|:----:|:----:|:----:|
-| PDF | v | v | v (内嵌图片) |
-| DOC | v | v | v |
-| DOCX | v | v | v |
-| PPTX | v | v | v |
-| XLSX / XLS | v | v | - |
-| HTML / CSV / JSON / XML / TXT | v | - | - |
-| 图片 / 邮件 / ZIP | v | - | - |
-| PPT | 不支持，提示用户另存为 .pptx | | |
+| PDF | ✅ | ✅ | ✅ (内嵌图片) |
+| DOC | ✅ | ✅ | ✅ |
+| DOCX | ✅ | ✅ | ✅ |
+| PPTX | ✅ | ✅ | ✅ |
+| XLSX / XLS | ✅ | ✅ | ❌ |
+| HTML / CSV / JSON / XML / TXT | ✅ | ❌ | ❌ |
+| 图片 / 邮件 / ZIP | ✅ | ❌ | ❌ |
+| PPT | ❌ 提示用户另存为 .pptx | | |
 
 - 批量转换 + 拖拽添加文件
 - PDF 双引擎（pdfplumber 文字 + PyMuPDF 内嵌图片）
