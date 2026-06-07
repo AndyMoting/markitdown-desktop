@@ -9,6 +9,11 @@ param(
 $ErrorActionPreference = "Stop"
 $ScriptDir = Split-Path -Parent $MyInvocation.MyCommand.Path
 $isCI = $NoPause -or ($env:CI -eq 'true')
+$isInteractive = (-not $PSBoundParameters.ContainsKey('Version')) -and
+                 (-not $PSBoundParameters.ContainsKey('SkipZip')) -and
+                 (-not $PSBoundParameters.ContainsKey('NoPause')) -and
+                 (-not $PSBoundParameters.ContainsKey('SkipUPX')) -and
+                 ($env:CI -ne 'true')
 
 # ---- find venv ----
 $venvCandidates = @(
@@ -34,14 +39,46 @@ $pyFiles = Get-ChildItem "$ScriptDir\v*_*.py" |
 
 if (-not $pyFiles) { Write-Host "ERROR: No v*_*.py found in $ScriptDir" -ForegroundColor Red; if (-not $NoPause) { Read-Host }; exit 1 }
 
-if ($Version -eq '' -or $Version -eq 'latest') {
-    $ENTRY = $pyFiles[-1].Name
-} elseif ($Version -match '^\d+$') {
-    $match = $pyFiles | Where-Object { $_.Num -eq [int]$Version }
-    if ($match) { $ENTRY = $match.Name }
-    else { Write-Host "ERROR: v${Version}_*.py not found" -ForegroundColor Red; if (-not $NoPause) { Read-Host }; exit 1 }
+if ($isInteractive) {
+    # ---- pick version ----
+    Write-Host "==================================================" -ForegroundColor Cyan
+    Write-Host "  MarkItDown GUI  /  build & package" -ForegroundColor Cyan
+    Write-Host "==================================================" -ForegroundColor Cyan
+    Write-Host ""
+    Write-Host "  Available versions:" -ForegroundColor White
+    Write-Host ""
+    for ($i = 0; $i -lt $pyFiles.Count; $i++) {
+        $tag = if ($i -eq $pyFiles.Count - 1) { "  <-- latest" } else { "" }
+        Write-Host "    [$($i+1)]  $($pyFiles[$i].Name)$tag" -ForegroundColor Gray
+    }
+    Write-Host ""
+    $choice = Read-Host "  Pick version [Enter = latest]"
+    if ($choice -match '^\d+$' -and [int]$choice -ge 1 -and [int]$choice -le $pyFiles.Count) {
+        $ENTRY = $pyFiles[[int]$choice - 1].Name
+    } else {
+        $ENTRY = $pyFiles[-1].Name
+    }
+
+    # ---- ZIP ----
+    Write-Host ""
+    $zipChoice = Read-Host "  Generate ZIP? [Y]es (default)  or  [N]o"
+    $SkipZip = ($zipChoice -eq 'n' -or $zipChoice -eq 'N')
+
+    Write-Host ""
+    Write-Host "  -> $ENTRY" -ForegroundColor Cyan
+    Write-Host ""
+
 } else {
-    Write-Host "ERROR: -Version must be a number or 'latest'" -ForegroundColor Red; if (-not $NoPause) { Read-Host }; exit 1
+    # non-interactive: resolve version param
+    if ($Version -eq '' -or $Version -eq 'latest') {
+        $ENTRY = $pyFiles[-1].Name
+    } elseif ($Version -match '^\d+$') {
+        $match = $pyFiles | Where-Object { $_.Num -eq [int]$Version }
+        if ($match) { $ENTRY = $match.Name }
+        else { Write-Host "ERROR: v${Version}_*.py not found" -ForegroundColor Red; if (-not $NoPause) { Read-Host }; exit 1 }
+    } else {
+        Write-Host "ERROR: -Version must be a number or 'latest'" -ForegroundColor Red; if (-not $NoPause) { Read-Host }; exit 1
+    }
 }
 
 # ---- banner ----
