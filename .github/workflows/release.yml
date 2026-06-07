@@ -2,13 +2,13 @@ name: Build and Release
 
 on:
   push:
-    branches: [master]
-    paths:
-      - 'v*_*.py'           # only when version files change
-      - 'requirements.txt'
-      - 'pdf_engine.py'
-      - 'doc_engine.py'
-      - 'sniffer.py'
+    tags: ['v*']           # way 1: git tag v13.0.0 && git push origin v13.0.0
+  workflow_dispatch:       # way 2: click button in GitHub Actions page
+    inputs:
+      version:
+        description: 'Version number (e.g. 13)'
+        required: false
+        default: 'latest'
 
 jobs:
   build:
@@ -17,46 +17,16 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v4
-        with:
-          fetch-depth: 2     # need previous commit for version diff
-
-      - name: Detect version
-        id: version
-        run: |
-          # find newest v*_*.py, read its VERSION constant
-          $latest = Get-ChildItem v*_*.py | Where-Object { $_.Name -match '^v\d+_.+\.py$' } | Sort-Object { [int]($_.Name -replace '^v(\d+)_.+', '$1') } | Select-Object -Last 1
-          $verLine = Select-String -Path $latest.FullName -Pattern '^VERSION\s*=\s*"(.+)"$' | Select-Object -First 1
-          if (-not $verLine) {
-            Write-Host "ERROR: no VERSION constant found in $latest"
-            exit 1
-          }
-          $ver = $verLine.Matches.Groups[1].Value
-          echo "version=$ver" >> $env:GITHUB_OUTPUT
-          echo "file=$($latest.Name)" >> $env:GITHUB_OUTPUT
-          Write-Host "Latest: $($latest.Name)  VERSION=$ver"
-
-          # check if this version file was added/modified in this push
-          $changed = git diff --name-only HEAD~1 HEAD -- $($latest.Name) 2>$null
-          if ($changed) {
-            echo "changed=true" >> $env:GITHUB_OUTPUT
-            Write-Host "Changed in this push: YES"
-          } else {
-            echo "changed=false" >> $env:GITHUB_OUTPUT
-            Write-Host "Changed in this push: NO (triggered by other file)"
-          }
 
       - name: Setup Python
-        if: steps.version.outputs.changed == 'true'
         uses: actions/setup-python@v5
         with:
           python-version: '3.12'
 
       - name: Install dependencies
-        if: steps.version.outputs.changed == 'true'
         run: pip install -r requirements.txt
 
       - name: Setup UPX
-        if: steps.version.outputs.changed == 'true'
         run: |
           $upxVersion = "4.2.4"
           $upxZip = "upx-$upxVersion-win64.zip"
@@ -66,18 +36,17 @@ jobs:
           echo "$($upxDir.FullName)" | Out-File -FilePath $env:GITHUB_PATH -Append
 
       - name: Build
-        if: steps.version.outputs.changed == 'true'
-        run: powershell -File build.ps1 -Version latest -SkipZip -NoPause
+        run: |
+          $ver = "${{ github.event.inputs.version }}"
+          if (-not $ver) { $ver = "latest" }
+          powershell -File build.ps1 -Version $ver -SkipZip -NoPause
 
       - name: Package ZIP
-        if: steps.version.outputs.changed == 'true'
         run: Compress-Archive -Path dist\MarkItDown\* -DestinationPath MarkItDown.zip
 
       - name: Create Release
-        if: steps.version.outputs.changed == 'true'
+        if: startsWith(github.ref, 'refs/tags/v')
         uses: softprops/action-gh-release@v2
         with:
-          tag_name: v${{ steps.version.outputs.version }}
-          name: v${{ steps.version.outputs.version }}
           files: MarkItDown.zip
           generate_release_notes: true

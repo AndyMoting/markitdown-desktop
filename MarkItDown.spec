@@ -5,7 +5,7 @@ Entry script updated by build.ps1 per version. Do not edit a.scripts by hand.
 """
 
 a = Analysis(
-    ['v13_optimize.py'],                           # <-- build.ps1 replaces this line per version
+    ['versions/v13_optimize.py'],         # <-- build.ps1 replaces this line per version
     pathex=[],
     binaries=[],
     datas=[],

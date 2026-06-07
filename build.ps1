@@ -32,12 +32,12 @@ if (-not $VENV) {
 }
 
 # ---- find versions ----
-$pyFiles = Get-ChildItem "$ScriptDir\v*_*.py" |
+$pyFiles = Get-ChildItem "$ScriptDir\versions\v*_*.py" |
     Where-Object { $_.Name -match '^v(\d+)_.+\.py$' } |
     ForEach-Object { [PSCustomObject]@{ Num = [int]($_.Name -replace '^v(\d+)_.+', '$1'); Name = $_.Name } } |
     Sort-Object Num
 
-if (-not $pyFiles) { Write-Host "ERROR: No v*_*.py found in $ScriptDir" -ForegroundColor Red; if (-not $NoPause) { Read-Host "  Press Enter to exit" }; exit 1 }
+if (-not $pyFiles) { Write-Host "ERROR: No v*_*.py found in $ScriptDir\versions\" -ForegroundColor Red; if (-not $NoPause) { Read-Host "  Press Enter to exit" }; exit 1 }
 
 if ($isInteractive) {
     # ---- pick version ----
@@ -124,9 +124,9 @@ Write-Host ""
 $specPath = "$ScriptDir\MarkItDown.spec"
 if (Test-Path $specPath) {
     $specContent = Get-Content $specPath -Raw
-    $specContent = $specContent -replace "\[.*v\d+_.+\.py.*\]", "['$ENTRY']"
+    $specContent = $specContent -replace "\[.*v\d+_.+\.py.*\]", "['versions/$ENTRY']"
     $specContent | Set-Content $specPath -Encoding UTF8 -NoNewline
-    Write-Host "  [0/3] Updated spec entry -> $ENTRY" -ForegroundColor Gray
+    Write-Host "  [0/3] Updated spec entry -> versions/$ENTRY" -ForegroundColor Gray
 } else {
     Write-Host "  [0/3] Generating spec from $ENTRY ..." -ForegroundColor Gray
     $makespecArgs = @(
@@ -138,7 +138,7 @@ if (Test-Path $specPath) {
         '--exclude-module', 'pypdfium2', '--exclude-module', 'pypdfium2_raw',
         '--exclude-module', 'magika', '--exclude-module', 'onnxruntime',
         '--exclude-module', 'flatbuffers', '--exclude-module', 'protobuf',
-        '--specpath', $ScriptDir, "$ScriptDir\$ENTRY"
+        '--specpath', $ScriptDir, "$ScriptDir\versions\$ENTRY"
     )
     & $VENV -m PyInstaller @makespecArgs 2>&1 | Select-Object -Last 3
     if ($LASTEXITCODE -ne 0) { Write-Host "  ERROR: spec generation failed" -ForegroundColor Red; exit 1 }
@@ -147,8 +147,8 @@ if (Test-Path $specPath) {
 # ---- step 1: clean ----
 $buildDir = "$ScriptDir\build"
 $distDir  = "$ScriptDir\dist"
-if (Test-Path $buildDir) { Remove-Item -Recurse -Force $buildDir; Write-Host "  [1/3] Cleaned build" -ForegroundColor Green }
-if (Test-Path $distDir)  { Remove-Item -Recurse -Force $distDir;  Write-Host "  [1/3] Cleaned dist" -ForegroundColor Green }
+if (Test-Path $buildDir) { Remove-Item -Recurse -Force $buildDir -ErrorAction SilentlyContinue; Write-Host "  [1/3] Cleaned build" -ForegroundColor Green }
+if (Test-Path $distDir)  { Remove-Item -Recurse -Force $distDir -ErrorAction SilentlyContinue;  Write-Host "  [1/3] Cleaned dist" -ForegroundColor Green }
 
 # ---- step 2: build ----
 Write-Host "  [2/3] PyInstaller (onedir) ..." -ForegroundColor Yellow

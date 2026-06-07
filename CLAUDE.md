@@ -19,18 +19,18 @@
 ```
 D:\Projects\MD\
 ├── CHANGELOG.md
+├── CLAUDE.md
 ├── requirements.txt
-├── pdf_engine.py   # PDF 引擎薄接口 (PyMuPDF)
-├── doc_engine.py   # DOC 引擎薄接口 (aspose-words-foss)
-├── sniffer.py      # magika→filetype shim
-├── v1_demo.py
-├── ... (v2–v10 历史版本)
-├── v11_tidy.py
-├── v12_doc.py
-├── v13_optimize.py  # 当前版本
-├── build.ps1         # 打包脚本 (右键运行, 无需 .spec)
-├── build/
-├── dist/           # MarkItDown\ (onedir, ~165MB)
+├── pdf_engine.py       # PDF 引擎薄接口 (PyMuPDF)
+├── doc_engine.py       # DOC 引擎薄接口 (aspose-words-foss)
+├── sniffer.py          # magika→filetype shim
+├── MarkItDown.spec     # PyInstaller 配置
+├── build.bat           # 双击构建入口
+├── build.ps1           # 打包脚本 (交互/CI 双模式)
+├── versions/           # 各版本源码
+│   ├── v1_demo.py
+│   ├── ...
+│   └── v13_optimize.py  # 当前版本
 └── samples/
 ```
 
