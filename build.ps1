@@ -27,7 +27,7 @@ if (-not $VENV) {
     Write-Host "ERROR: venv not found. Run:" -ForegroundColor Red
     Write-Host "  python -m venv D:\Projects\.venv"
     Write-Host "  D:\Projects\.venv\Scripts\python.exe -m pip install -r requirements.txt"
-    if (-not $NoPause) { Read-Host }
+    if (-not $NoPause) { Read-Host "  Press Enter to exit" }
     exit 1
 }
 
@@ -37,7 +37,7 @@ $pyFiles = Get-ChildItem "$ScriptDir\v*_*.py" |
     ForEach-Object { [PSCustomObject]@{ Num = [int]($_.Name -replace '^v(\d+)_.+', '$1'); Name = $_.Name } } |
     Sort-Object Num
 
-if (-not $pyFiles) { Write-Host "ERROR: No v*_*.py found in $ScriptDir" -ForegroundColor Red; if (-not $NoPause) { Read-Host }; exit 1 }
+if (-not $pyFiles) { Write-Host "ERROR: No v*_*.py found in $ScriptDir" -ForegroundColor Red; if (-not $NoPause) { Read-Host "  Press Enter to exit" }; exit 1 }
 
 if ($isInteractive) {
     # ---- pick version ----
@@ -75,9 +75,9 @@ if ($isInteractive) {
     } elseif ($Version -match '^\d+$') {
         $match = $pyFiles | Where-Object { $_.Num -eq [int]$Version }
         if ($match) { $ENTRY = $match.Name }
-        else { Write-Host "ERROR: v${Version}_*.py not found" -ForegroundColor Red; if (-not $NoPause) { Read-Host }; exit 1 }
+        else { Write-Host "ERROR: v${Version}_*.py not found" -ForegroundColor Red; if (-not $NoPause) { Read-Host "  Press Enter to exit" }; exit 1 }
     } else {
-        Write-Host "ERROR: -Version must be a number or 'latest'" -ForegroundColor Red; if (-not $NoPause) { Read-Host }; exit 1
+        Write-Host "ERROR: -Version must be a number or 'latest'" -ForegroundColor Red; if (-not $NoPause) { Read-Host "  Press Enter to exit" }; exit 1
     }
 }
 
@@ -183,7 +183,7 @@ $exitCode = $proc.ExitCode
 
 if ($exitCode -ne 0) {
     Write-Host "`n  Build FAILED (exit $exitCode)" -ForegroundColor Red
-    if (-not $NoPause) { Read-Host }
+    if (-not $NoPause) { Read-Host "  Press Enter to exit" }
     exit 1
 }
 
@@ -197,7 +197,7 @@ $exe = "$outDir\MarkItDown.exe"
 
 if (-not (Test-Path $exe)) {
     Write-Host "  Output not found: $exe" -ForegroundColor Red
-    if (-not $NoPause) { Read-Host }
+    if (-not $NoPause) { Read-Host "  Press Enter to exit" }
     exit 1
 }
 
@@ -227,4 +227,4 @@ Write-Host "  $outDir\" -ForegroundColor Green
 if (-not $SkipZip) { Write-Host "  $distDir\MarkItDown.zip ($zipMB MB)" -ForegroundColor Green }
 Write-Host "==================================================" -ForegroundColor Green
 
-if (-not $NoPause) { Read-Host }
+if (-not $NoPause) { Read-Host "  Press Enter to exit" }
