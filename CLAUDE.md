@@ -4,7 +4,7 @@
 
 ## 铁律
 
-- **每个版本独立文件** `versions/vN_xxx.py`，绝不在旧版上改
+- **版本独立文件** `versions/vN_xxx.py`，历史快照，不修不改不合入。后续只改 `releases/v*py`
 - `CHANGELOG.md` 每版必记
 - 先写计划
 - 新建 venv 后先 `pip install -r requirements.txt`，否则所有文件都报 ModuleNotFoundError
