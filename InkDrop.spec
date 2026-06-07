@@ -1,14 +1,26 @@
-﻿# -*- mode: python ; coding: utf-8 -*-
+# -*- mode: python ; coding: utf-8 -*-
 """
 InkDrop - PyInstaller spec
 Entry script updated by build.ps1 per version. Do not edit a.scripts by hand.
 """
 
+import site
+from pathlib import Path
+
+_aspose_resources = []
+for _d in site.getsitepackages():
+    _blank = Path(_d) / 'aspose' / 'words_foss' / 'docx_writer' / 'resources' / 'blank.docx'
+    if _blank.exists():
+        _aspose_resources.append(
+            (str(_blank), 'aspose/words_foss/docx_writer/resources')
+        )
+        break
+
 a = Analysis(
-    ['versions/v14_custom_output.py'],         # <-- build.ps1 replaces this line per version
+    ['releases/v1.0.0.py'],         # <-- build.ps1 replaces this line per version
     pathex=[],
     binaries=[],
-    datas=[],
+    datas=_aspose_resources,
     hiddenimports=[
         'fitz', 'pymupdf',                        # PDF engine (PyMuPDF)
         'sniffer', 'filetype',                     # magika -> filetype shim
