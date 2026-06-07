@@ -161,18 +161,25 @@ if ($UPX_DIR) { $pyiArgs += '--upx-dir'; $pyiArgs += $UPX_DIR }
 if (-not (Test-Path $buildDir)) { New-Item -ItemType Directory -Force $buildDir | Out-Null }
 
 # PyInstaller writes all progress to stderr. PS 5.1 wraps native stderr as
-# NativeCommandError, which can terminate the script even with EAP=Continue.
-# Use Start-Process to avoid PS stderr handling entirely.
+# NativeCommandError. Use .NET Process directly to stream stderr in real-time
+# without PS interference.
 $pyiFullArgs = @('-m', 'PyInstaller') + $pyiArgs + @('--distpath', $distDir, '--workpath', $buildDir)
-$stderrFile = "$env:TEMP\pyinstaller-build-stderr.txt"
-$proc = Start-Process -FilePath $VENV -ArgumentList $pyiFullArgs -NoNewWindow -Wait -PassThru -RedirectStandardError $stderrFile
-$exitCode = $proc.ExitCode
+$psi = New-Object System.Diagnostics.ProcessStartInfo
+$psi.FileName = $VENV
+$psi.Arguments = $pyiFullArgs -join ' '
+$psi.UseShellExecute = $false
+$psi.RedirectStandardError = $true
+$psi.RedirectStandardOutput = $false
+$psi.CreateNoWindow = $true
+$proc = [System.Diagnostics.Process]::Start($psi)
 
-# Echo stderr to console for visibility
-if (Test-Path $stderrFile) {
-    Get-Content $stderrFile | ForEach-Object { Write-Host $_ }
-    Remove-Item $stderrFile -Force -ErrorAction SilentlyContinue
+# Read stderr line-by-line, print in real-time
+while (-not $proc.StandardError.EndOfStream) {
+    $line = $proc.StandardError.ReadLine()
+    if ($line) { Write-Host $line }
 }
+$proc.WaitForExit()
+$exitCode = $proc.ExitCode
 
 if ($exitCode -ne 0) {
     Write-Host "`n  Build FAILED (exit $exitCode)" -ForegroundColor Red
