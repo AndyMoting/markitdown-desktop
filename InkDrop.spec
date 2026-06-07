@@ -1,6 +1,6 @@
 ﻿# -*- mode: python ; coding: utf-8 -*-
 """
-MarkItDown GUI - PyInstaller spec
+InkDrop - PyInstaller spec
 Entry script updated by build.ps1 per version. Do not edit a.scripts by hand.
 """
 
@@ -33,7 +33,7 @@ exe = EXE(
     a.scripts,
     [],
     exclude_binaries=True,
-    name='MarkItDown',
+    name='InkDrop',
     debug=False,
     bootloader_ignore_signals=False,
     strip=False,
@@ -57,5 +57,5 @@ coll = COLLECT(
         'libcrypto-3.dll',
         'libssl-3.dll',
     ],
-    name='MarkItDown',
+    name='InkDrop',
 )

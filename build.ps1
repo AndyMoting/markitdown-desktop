@@ -42,7 +42,7 @@ if (-not $pyFiles) { Write-Host "ERROR: No v*_*.py found in $ScriptDir\versions\
 if ($isInteractive) {
     # ---- pick version ----
     Write-Host "==================================================" -ForegroundColor Cyan
-    Write-Host "  MarkItDown GUI  /  build & package" -ForegroundColor Cyan
+    Write-Host "  InkDrop  /  build & package" -ForegroundColor Cyan
     Write-Host "==================================================" -ForegroundColor Cyan
     Write-Host ""
     Write-Host "  Available versions:" -ForegroundColor White
@@ -84,7 +84,7 @@ if ($isInteractive) {
 # ---- banner ----
 $banner = @"
 ==================================================
-  MarkItDown GUI  /  build & package
+  InkDrop  /  build & package
 ==================================================
   Source : $ENTRY
   Venv   : $VENV
@@ -121,7 +121,7 @@ if (-not $SkipUPX) {
 Write-Host ""
 
 # ---- step 0: update spec ----
-$specPath = "$ScriptDir\MarkItDown.spec"
+$specPath = "$ScriptDir\InkDrop.spec"
 if (Test-Path $specPath) {
     $specContent = Get-Content $specPath -Raw
     $specContent = $specContent -replace "\[.*v\d+_.+\.py.*\]", "['versions/$ENTRY']"
@@ -130,7 +130,7 @@ if (Test-Path $specPath) {
 } else {
     Write-Host "  [0/3] Generating spec from $ENTRY ..." -ForegroundColor Gray
     $makespecArgs = @(
-        '--onedir', '--name', 'MarkItDown', '--noconfirm', '--windowed',
+        '--onedir', '--name', 'InkDrop', '--noconfirm', '--windowed',
         '--hidden-import', 'fitz', '--hidden-import', 'pymupdf',
         '--hidden-import', 'sniffer', '--hidden-import', 'filetype',
         '--hidden-import', 'pdf_engine', '--hidden-import', 'doc_engine',
@@ -192,8 +192,8 @@ Write-Host ""
 Write-Host "  + Build done in $([math]::Round($sw.Elapsed.TotalMinutes, 1)) min" -ForegroundColor Green
 
 # ---- step 3: package ----
-$outDir = "$distDir\MarkItDown"
-$exe = "$outDir\MarkItDown.exe"
+$outDir = "$distDir\InkDrop"
+$exe = "$outDir\InkDrop.exe"
 
 if (-not (Test-Path $exe)) {
     Write-Host "  Output not found: $exe" -ForegroundColor Red
@@ -209,7 +209,7 @@ if (-not $SkipZip) {
     Write-Host "  [3/3] Package" -ForegroundColor Yellow
     Write-Host "  + Folder : $folderMB MB" -ForegroundColor Green
 
-    $zipPath = "$distDir\MarkItDown.zip"
+    $zipPath = "$distDir\InkDrop.zip"
     Write-Host "  Compressing ..."
     $prevProgress = $ProgressPreference
     $ProgressPreference = 'SilentlyContinue'
@@ -227,7 +227,7 @@ Write-Host ""
 Write-Host "==================================================" -ForegroundColor Green
 Write-Host "  Done" -ForegroundColor Green
 Write-Host "  $outDir\" -ForegroundColor Green
-if (-not $SkipZip) { Write-Host "  $distDir\MarkItDown.zip ($zipMB MB)" -ForegroundColor Green }
+if (-not $SkipZip) { Write-Host "  $distDir\InkDrop.zip ($zipMB MB)" -ForegroundColor Green }
 Write-Host "==================================================" -ForegroundColor Green
 
 if (-not $NoPause) { Read-Host "  Press Enter to exit" }

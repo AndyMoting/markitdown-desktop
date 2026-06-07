@@ -2,7 +2,7 @@
 
 ## Infrastructure — 2026-06-07
 
-**文件**: `build.ps1`、`build.bat`、`MarkItDown.spec`、`requirements.txt`、`.github/workflows/release.yml`、`.gitignore`
+**文件**: `build.ps1`、`build.bat`、`InkDrop.spec`、`requirements.txt`、`.github/workflows/release.yml`、`.gitignore`
 
 **构建系统重写**:
 - `build.bat`: 双击入口，绕过 PS 执行策略，自动调 `build.ps1`
@@ -18,7 +18,7 @@
 
 **依赖与配置**:
 - `requirements.txt`: 5 个直接依赖 + pyinstaller 全部锁定 `==x.y.z`
-- `MarkItDown.spec`: PyInstaller 独立配置，入口由 build.ps1 按版本号动态替换
+- `InkDrop.spec`: PyInstaller 独立配置，入口由 build.ps1 按版本号动态替换
 - `upx_exclude`: python312.dll / libcrypto-3.dll / libssl-3.dll（UPX 压缩后可能加载失败）
 
 **CI/CD**:

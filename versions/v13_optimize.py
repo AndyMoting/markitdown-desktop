@@ -1,4 +1,4 @@
-r"""MarkItDown GUI v13 — 文档转 Markdown 桌面工具
+r"""InkDrop v13 — 文档转 Markdown 桌面工具
 
 功能: 拖拽/批量文档 → Markdown + 图片提取 → 输出文件夹
 支持: PDF/DOC/DOCX/PPTX/XLSX/XLS/HTML/CSV/JSON/XML/TXT/图片/邮件/ZIP
@@ -26,7 +26,7 @@ from tkinter import filedialog, messagebox, ttk
 from typing import NamedTuple
 
 VERSION = "13.0.0"
-APP_NAME = "markitdown-gui"
+APP_NAME = "inkdrop"
 
 # ---- magika→filetype shim (省 42MB) ----
 # 必须在 import markitdown 之前注入, 否则打包后 magika 被排除会崩。
@@ -507,7 +507,7 @@ class MarkItDownApp:
         self.cancel_event = threading.Event()
         self._result_folders: list[str] = []
 
-        self.root.title(f"MarkItDown 转换器 v{VERSION}")
+        self.root.title(f"InkDrop v{VERSION}")
         self.root.resizable(True, True)
         self.root.minsize(700, 560)
         self._restore_or_center(700, 560)
@@ -1164,7 +1164,7 @@ def _show_pymupdf_dialog(args):
 def _parse_args(argv: list[str] | None = None):
     parser = argparse.ArgumentParser(
         prog="markitdown-gui",
-        description="MarkItDown GUI — 将文档转换为 Markdown",
+        description="InkDrop — 将文档转换为 Markdown",
         formatter_class=argparse.RawDescriptionHelpFormatter,
         epilog=textwrap.dedent("""\
             示例:

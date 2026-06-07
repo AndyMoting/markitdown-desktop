@@ -1,4 +1,4 @@
-# MarkItDown GUI
+# InkDrop
 
 给 markitdown 做 Windows GUI，打包为便携 exe。项目目录 `D:\Projects\MD\`。
 
@@ -24,7 +24,7 @@ D:\Projects\MD\
 ├── pdf_engine.py       # PDF 引擎薄接口 (PyMuPDF)
 ├── doc_engine.py       # DOC 引擎薄接口 (aspose-words-foss)
 ├── sniffer.py          # magika→filetype shim
-├── MarkItDown.spec     # PyInstaller 配置
+├── InkDrop.spec        # PyInstaller 配置
 ├── build.bat           # 双击构建入口
 ├── build.ps1           # 打包脚本 (交互/CI 双模式)
 ├── versions/           # 各版本源码

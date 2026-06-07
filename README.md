@@ -1,10 +1,10 @@
-# MarkItDown GUI
+# InkDrop
 
 文档转 Markdown 桌面工具。拖拽文件进来，一键转成 Markdown，图片自动提取为独立文件。
 
 ## 下载
 
-[Releases](https://github.com//MD/releases) 下载 `MarkItDown.zip`，解压运行 `MarkItDown.exe`，无需安装。
+[Releases](https://github.com//MD/releases) 下载 `InkDrop.zip`，解压运行 `InkDrop.exe`，无需安装。
 
 ## 支持的格式
 
@@ -19,7 +19,7 @@
 
 ## 使用
 
-1. 打开 `MarkItDown.exe`
+1. 打开 `InkDrop.exe`
 2. 拖拽文件进来（或点 Add Files）
 3. 点 Convert，等待完成
 4. 输出在每个文件的 `*_converted/` 子目录
@@ -33,7 +33,7 @@ pip install -r requirements.txt
 powershell -File build.ps1
 ```
 
-产物在 `dist\MarkItDown\`。装 [UPX](https://github.com/upx/upx/releases) 到 `PATH` 可压缩一半体积。
+产物在 `dist\InkDrop\`。装 [UPX](https://github.com/upx/upx/releases) 到 `PATH` 可压缩一半体积。
 
 ## 许可
 
