@@ -7,7 +7,7 @@ To swap engines, replace the bodies of open_pdf / extract_text / extract_images.
 import logging
 import os
 
-_log = logging.getLogger("markitdown-gui")
+_log = logging.getLogger("inkdrop")
 _fitz = None
 
 

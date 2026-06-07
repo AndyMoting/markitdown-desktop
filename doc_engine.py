@@ -11,7 +11,7 @@ import os
 import tempfile
 from pathlib import Path
 
-_log = logging.getLogger("markitdown-gui")
+_log = logging.getLogger("inkdrop")
 _aw = None
 
 
@@ -60,8 +60,8 @@ def doc_to_docx(doc_path: str, work_dir: str | None = None) -> str | None:
         doc = aw.Document(doc_path)
         doc.save(docx_path, aw.SaveFormat.DOCX)
         _log.debug("doc(%s) -> docx(%s)", doc_path, docx_path)
-    except Exception:
-        _log.warning("aspose-words-foss failed to convert %s", doc_path, exc_info=True)
+    except Exception as e:
+        _log.warning("aspose-words-foss failed to convert %s: %s", doc_path, e)
         # clean up on failure
         try:
             os.remove(docx_path)

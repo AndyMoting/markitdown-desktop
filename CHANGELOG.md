@@ -5,11 +5,17 @@
 **致命修复**: `root.after()` 关键字参数 bug。
 
 - `_convert_thread` 中 `root.after(0, self._on_all_done, ..., cancelled=False)` 的 `cancelled=` 被 tkinter 当作传给 `after()` 的关键字参数（而非传给回调），触发 `TypeError` 导致工作线程崩溃
-- `_on_all_done` 永不执行 → `self.running` 永远为 `True` → 所有 UI 按钮失效
+- `_on_all_done` 永不执行 -> `self.running` 永远为 `True` -> 所有 UI 按钮失效
 - **引入版本**: v7（首次 `_on_all_done` 添加 `cancelled` 参数），v7–v1.0.0 全受影响
-- **修复**: `cancelled=False` → 位置参数 `False`，同理 `cancelled=True` → `True`
+- **修复**: `cancelled=False` -> 位置参数 `False`，同理 `cancelled=True` -> `True`
 
-**文件**: `releases/v1.0.0.py`、`versions/v14_custom_output.py`
+**修复**: 引擎日志丢失 + 异常信息被吞。
+
+- `doc_engine.py` / `pdf_engine.py` logger 名 `"markitdown-gui"` -> `"inkdrop"`（项目改名时遗漏），导致引擎内部的 warning/exception 不写日志文件
+- `doc_to_docx()` 异常时只记录 exc_info，现在同时记录异常消息到日志
+- 日志文件名前缀 `v14_` -> `v1.0_`
+
+**文件**: `releases/v1.0.0.py`、`versions/v14_custom_output.py`、`doc_engine.py`、`pdf_engine.py`
 
 ---
 

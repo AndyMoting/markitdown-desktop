@@ -149,7 +149,7 @@ def _init_logging(debug: bool):
         except Exception:
             pass
 
-    log_name = f"v14_{Path(sys.argv[0]).stem}.log"
+    log_name = f"v1.0_{Path(sys.argv[0]).stem}.log"
     file_handler = logging.FileHandler(_LOG_DIR / log_name, encoding="utf-8")
     file_handler.setFormatter(fmt)
     _LOG.addHandler(file_handler)
