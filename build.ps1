@@ -124,13 +124,18 @@ if ($UPX_DIR) { $pyiArgs += '--upx-dir'; $pyiArgs += $UPX_DIR }
 if (-not (Test-Path $buildDir)) { New-Item -ItemType Directory -Force $buildDir | Out-Null }
 
 # PyInstaller writes all progress to stderr. PS 5.1 wraps native stderr as
-# NativeCommandError, which with $ErrorActionPreference="Stop" kills the build.
-# Temporarily switch to Continue, then check real exit code.
-$prevEAP = $ErrorActionPreference
-$ErrorActionPreference = "Continue"
-& $VENV -m PyInstaller @pyiArgs --distpath "$distDir" --workpath "$buildDir"
-$exitCode = $LASTEXITCODE
-$ErrorActionPreference = $prevEAP
+# NativeCommandError, which can terminate the script even with EAP=Continue.
+# Use Start-Process to avoid PS stderr handling entirely.
+$pyiFullArgs = @('-m', 'PyInstaller') + $pyiArgs + @('--distpath', $distDir, '--workpath', $buildDir)
+$stderrFile = "$env:TEMP\pyinstaller-build-stderr.txt"
+$proc = Start-Process -FilePath $VENV -ArgumentList $pyiFullArgs -NoNewWindow -Wait -PassThru -RedirectStandardError $stderrFile
+$exitCode = $proc.ExitCode
+
+# Echo stderr to console for visibility
+if (Test-Path $stderrFile) {
+    Get-Content $stderrFile | ForEach-Object { Write-Host $_ }
+    Remove-Item $stderrFile -Force -ErrorAction SilentlyContinue
+}
 
 if ($exitCode -ne 0) {
     Write-Host "`n  Build FAILED (exit $exitCode)" -ForegroundColor Red
