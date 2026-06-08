@@ -34,3 +34,30 @@ config/
 *.zip
 *.7z
 promo/
+
+# PyInstaller
+build/
+dist/
+*.spec
+
+# Python
+__pycache__/
+*.pyc
+*.pyo
+*.egg-info/
+venv/
+.env
+
+# 日志与临时文件
+*.log
+tmp/
+temp/
+
+# 私人数据（防止再次误提交）
+samples/
+*.xls
+*.xlsx
+*.doc
+*.docx
+*.pptx
+*.pdf
