@@ -6,6 +6,9 @@
     {% endif %}
 
     {% if job.status == 'processing' or job.status == 'pending' %}
+    <!-- Polling on the progress-bar div itself: when status becomes completed,
+         the server returns the full result HTML which replaces this div via outerHTML.
+         Polling stops naturally because the replacement has no hx-trigger. Intentional. -->
     <div class="progress-bar" hx-get="/api/status/{{ job.id }}"
          hx-trigger="every 1s" hx-swap="none"
          hx-on::after-request="if(event.detail.successful) { document.getElementById('preview-{{ job.id }}').outerHTML = event.detail.xhr.responseText; }">
@@ -19,7 +22,7 @@
         <section class="preview-md">
             <h3>Markdown 预览</h3>
             <article class="markdown-body">
-                {{ job.result.markdown | truncate(500) }}
+                {{ job.result.markdown | truncate(500) | e }}
             </article>
         </section>
 

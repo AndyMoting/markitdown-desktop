@@ -59,7 +59,10 @@ def create_app(job_manager: JobManager | None = None) -> FastAPI:
 
         work_dir = job_manager.get_work_dir(job_id) / "input"
         work_dir.mkdir(parents=True, exist_ok=True)
-        input_path = work_dir / file.filename
+        safe_name = Path(file.filename).name
+        if not safe_name:
+            safe_name = "upload.bin"
+        input_path = work_dir / safe_name
         input_path.write_bytes(content)
 
         asyncio.create_task(job_manager.convert_job(job_id, input_path))

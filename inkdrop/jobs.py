@@ -35,8 +35,11 @@ class Job:
 class JobManager:
     """In-memory job store. No persistence — jobs live for the session."""
 
-    def __init__(self, tmp_root: str = "/tmp/inkdrop"):
+    def __init__(self, tmp_root: str | None = None):
         self._jobs: dict[str, Job] = {}
+        if tmp_root is None:
+            import tempfile
+            tmp_root = tempfile.mkdtemp(prefix="inkdrop_")
         self._tmp_root = Path(tmp_root)
         self._tmp_root.mkdir(parents=True, exist_ok=True)
 
@@ -112,9 +115,12 @@ class JobManager:
         self.update_progress(job_id, 10, "Starting conversion...")
         try:
             output_dir = self.get_work_dir(job_id) / "output"
-            result = await loop.run_in_executor(
-                None, convert, input_path, output_dir
+            result = await asyncio.wait_for(
+                loop.run_in_executor(None, convert, input_path, output_dir),
+                timeout=60.0
             )
             self.complete_job(job_id, result)
+        except asyncio.TimeoutError:
+            self.fail_job(job_id, "转换超时（60秒），文件可能过大或过复杂")
         except Exception as e:
             self.fail_job(job_id, str(e))
