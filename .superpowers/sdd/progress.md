@@ -5,8 +5,8 @@
 
 | Task | Status | Commits | Notes |
 |------|--------|---------|-------|
-| 1: Project structure + dependencies | pending | | |
-| 2: Converter module | pending | | |
+| 1: Project structure + dependencies | complete | 2921507 | All deps installed, packages created |
+| 2: Converter module | complete | (after 2921507) | Tests pass, wraps doc2md pipeline |
 | 3: Quality check module | pending | | |
 | 4: Job manager | pending | | |
 | 5: FastAPI app + routes | pending | | |
