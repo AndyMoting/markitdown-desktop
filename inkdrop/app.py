@@ -2,6 +2,7 @@
 
 import asyncio
 import logging
+import time
 from pathlib import Path
 
 from fastapi import FastAPI, File, UploadFile, HTTPException
@@ -25,6 +26,20 @@ def create_app(job_manager: JobManager | None = None) -> FastAPI:
     if job_manager is None:
         import tempfile
         job_manager = JobManager(tmp_root=str(Path(tempfile.mkdtemp(prefix="inkdrop_"))))
+
+    @app.on_event("startup")
+    async def start_cleanup_task():
+        async def cleanup_loop():
+            import shutil
+            while True:
+                await asyncio.sleep(300)  # every 5 minutes
+                now = time.time()
+                for job_id, job in list(job_manager._jobs.items()):
+                    if (job.completed_at
+                            and now - job.completed_at > 300):  # 5 min old
+                        job_manager.cleanup(job_id)
+                        _log.info("Cleaned up job %s", job_id)
+        asyncio.create_task(cleanup_loop())
 
     base_dir = Path(__file__).parent
     templates = Jinja2Templates(directory=str(base_dir / "templates"))
