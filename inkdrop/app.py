@@ -6,6 +6,7 @@ from pathlib import Path
 
 from fastapi import FastAPI, File, UploadFile, HTTPException
 from fastapi.responses import HTMLResponse, FileResponse, JSONResponse
+from starlette.responses import StreamingResponse
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
 from starlette.requests import Request
@@ -97,10 +98,10 @@ def create_app(job_manager: JobManager | None = None) -> FastAPI:
                     zf.write(img, f"images/{img.name}")
 
         buf.seek(0)
-        return FileResponse(
-            buf,
+        return StreamingResponse(
+            iter([buf.getvalue()]),
             media_type="application/zip",
-            filename=f"{job_id}_inkdrop.zip"
+            headers={"Content-Disposition": f'attachment; filename="{job_id}_inkdrop.zip"'},
         )
 
     return app
