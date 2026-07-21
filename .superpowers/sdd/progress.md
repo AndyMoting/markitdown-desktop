@@ -8,7 +8,7 @@
 | 1: Project structure + dependencies | complete | 2921507 | All deps installed, packages created |
 | 2: Converter module | complete | (after 2921507) | Tests pass, wraps doc2md pipeline |
 | 3: Quality check module | complete | (after T2) | 7/7 tests pass |
-| 4: Job manager | pending | | |
+| 4: Job manager | complete | d18ef6c | 4/4 tests pass |
 | 5: FastAPI app + routes | pending | | |
 | 6: Entry point + smoke test | pending | | |
 | 7: Allure reporting | pending | | |

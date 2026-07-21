@@ -31,7 +31,7 @@ def create_app(job_manager: JobManager | None = None) -> FastAPI:
 
     @app.get("/", response_class=HTMLResponse)
     async def index(request: Request):
-        return templates.TemplateResponse("index.html", {"request": request})
+        return templates.TemplateResponse(request, "index.html")
 
     @app.post("/api/upload")
     async def upload(file: UploadFile = File(...)):
@@ -56,8 +56,7 @@ def create_app(job_manager: JobManager | None = None) -> FastAPI:
         if job_info is None:
             raise HTTPException(404, "Job not found")
         return templates.TemplateResponse(
-            "preview.html",
-            {"request": request, "job": job_info}
+            request, "preview.html", {"job": job_info}
         )
 
     @app.get("/api/preview/{job_id}")
