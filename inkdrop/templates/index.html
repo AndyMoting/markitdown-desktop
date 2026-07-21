@@ -1,0 +1,29 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>InkDrop · 喂给 AI 的文档预处理器</title>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@picocss/pico@2/css/pico.min.css">
+    <script src="https://unpkg.com/htmx.org@2.0.2"></script>
+    <link rel="stylesheet" href="/static/style.css">
+</head>
+<body>
+    <main class="container">
+        <h1>InkDrop <small>喂给 AI 的文档预处理器</small></h1>
+        <div id="upload-zone"
+             class="drop-zone"
+             hx-post="/api/upload"
+             hx-encoding="multipart/form-data"
+             hx-target="#result"
+             hx-swap="innerHTML"
+             hx-on::after-request="this.value=''">
+            <input type="file" name="file" id="file-input"
+                   accept=".pdf,.doc,.docx,.pptx,.xlsx,.xls,.html,.csv,.json,.xml,.txt,.epub,.zip,.png,.jpg,.jpeg,.gif,.bmp,.eml,.msg">
+            <p>拖拽文件到这里，或点击选择</p>
+            <small>支持 PDF / DOC / DOCX / PPTX / XLSX / 图片 / 邮件 等</small>
+        </div>
+        <div id="result"></div>
+    </main>
+</body>
+</html>

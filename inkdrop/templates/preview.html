@@ -1,0 +1,75 @@
+<div class="preview-container" id="preview-{{ job.id }}">
+    {% if job.result and job.result.quality %}
+    <div class="quality-badge quality-{{ 'good' if job.result.quality.score >= 70 else 'medium' if job.result.quality.score >= 40 else 'bad' }}">
+        质量评分: {{ job.result.quality.score }}/100
+    </div>
+    {% endif %}
+
+    {% if job.status == 'processing' or job.status == 'pending' %}
+    <div class="progress-bar" hx-get="/api/status/{{ job.id }}"
+         hx-trigger="every 1s" hx-swap="none"
+         hx-on::after-request="if(event.detail.successful) { document.getElementById('preview-{{ job.id }}').outerHTML = event.detail.xhr.responseText; }">
+        <div class="progress-fill" style="width: {{ job.progress }}%"></div>
+        <span>{{ job.message or '处理中...' }}</span>
+    </div>
+    {% endif %}
+
+    {% if job.status == 'completed' and job.result %}
+    <div class="result-grid">
+        <section class="preview-md">
+            <h3>Markdown 预览</h3>
+            <article class="markdown-body">
+                {{ job.result.markdown | truncate(500) }}
+            </article>
+        </section>
+
+        {% if job.result.images %}
+        <section class="image-gallery">
+            <h3>提取的图片 ({{ job.result.images | length }})</h3>
+            <div class="gallery-grid">
+                {% for img in job.result.images[:20] %}
+                <figure>
+                    <img src="/api/images/{{ job.id }}/{{ img.name }}"
+                         alt="{{ img.name }}"
+                         onclick="document.getElementById('dlg-{{ job.id }}-{{ loop.index }}').showModal()">
+                    <figcaption>{{ img.name }}</figcaption>
+                    <dialog id="dlg-{{ job.id }}-{{ loop.index }}">
+                        <img src="/api/images/{{ job.id }}/{{ img.name }}" style="max-width:90vw;max-height:90vh">
+                        <form method="dialog"><button>关闭</button></form>
+                    </dialog>
+                </figure>
+                {% endfor %}
+            </div>
+        </section>
+        {% endif %}
+
+        {% if job.result.quality %}
+        <section class="quality-report">
+            <h3>质量报告</h3>
+            <ul>
+                <li>标题结构: {{ '✅ 正常' if job.result.quality.heading_structure_ok else '⚠️ 层级断裂' }}</li>
+                <li>表格数量: {{ job.result.quality.table_count }}</li>
+                <li>提取图片: {{ job.result.quality.image_count }}</li>
+                <li>乱码检测: {{ '⚠️ 疑似乱码' if job.result.quality.garbled_detected else '✅ 正常' }}</li>
+            </ul>
+        </section>
+        {% endif %}
+
+        {% if job.result.warning %}
+        <div class="warning">⚠️ {{ job.result.warning }}</div>
+        {% endif %}
+    </div>
+
+    <div class="actions">
+        <button onclick="navigator.clipboard.writeText(`{{ job.result.markdown | replace('`', '\\`') | truncate(10000) }})`)">复制 Markdown</button>
+        <a href="/api/download/{{ job.id }}" role="button">下载 ZIP</a>
+    </div>
+    {% endif %}
+
+    {% if job.status == 'failed' %}
+    <div class="error">
+        <h3>❌ 转换失败</h3>
+        <p>{{ job.error }}</p>
+    </div>
+    {% endif %}
+</div>
