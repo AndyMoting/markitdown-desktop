@@ -17,7 +17,7 @@ for _d in site.getsitepackages():
         break
 
 a = Analysis(
-    ['releases/v1.0.0.py'],         # <-- build.ps1 replaces this line per version
+    ['inkdrop_gui.py'],              # <-- entry point for v2.0 GUI
     pathex=[],
     binaries=[],
     datas=_aspose_resources,
@@ -26,6 +26,8 @@ a = Analysis(
         'sniffer', 'filetype',                     # magika -> filetype shim
         'pdf_engine', 'doc_engine',                # thin wrappers
         'aspose.words_foss',                       # .doc conversion
+        'PIL', 'PIL.Image', 'PIL.ImageTk',         # image gallery
+        'tkinterdnd2',                             # drag-and-drop
     ],
     hookspath=[],
     hooksconfig={},
