@@ -64,6 +64,46 @@ from tkinterdnd2 import TkinterDnD
 from markitdown import MarkItDown
 
 # ============================================================
+#  Color palette
+# ============================================================
+
+COLORS = {
+    'primary': '#2563EB',
+    'success': '#16A34A',
+    'warning': '#D97706',
+    'danger': '#DC2626',
+    'bg': '#F8FAFC',
+    'card': '#FFFFFF',
+    'text': '#1E293B',
+    'muted': '#64748B',
+    'border': '#E2E8F0',
+}
+
+
+def _setup_styles():
+    style = ttk.Style()
+    available = style.theme_names()
+    if 'vista' in available:
+        style.theme_use('vista')
+    elif 'clam' in available:
+        style.theme_use('clam')
+
+    style.configure('Header.TLabel', font=('Segoe UI', 16, 'bold'),
+                    foreground=COLORS['text'])
+    style.configure('Subtitle.TLabel', font=('Segoe UI', 9),
+                    foreground=COLORS['muted'])
+    style.configure('Convert.TButton', font=('Segoe UI', 11, 'bold'))
+    style.configure('Card.TLabelframe', background=COLORS['card'])
+    style.configure('Card.TLabelframe.Label', background=COLORS['card'],
+                    foreground=COLORS['text'], font=('Segoe UI', 9, 'bold'))
+    style.configure('Score.TLabel', font=('Segoe UI', 24, 'bold'))
+    style.configure('Status.TLabel', font=('Segoe UI', 8),
+                    foreground=COLORS['muted'])
+    style.configure('Count.TLabel', font=('Segoe UI', 9),
+                    foreground=COLORS['muted'])
+
+
+# ============================================================
 #  1. config  配置读写 (exe 同级 config/ 目录)
 # ============================================================
 
@@ -654,107 +694,139 @@ class MarkItDownApp:
     # ------ UI 构建 ------
 
     def _build_ui(self):
-        pad = {"padx": 10, "pady": 4}
+        pad = {"padx": 16, "pady": 4}
 
-        # 文件列表
-        list_frame = ttk.LabelFrame(self.root, text="文件列表")
-        list_frame.pack(fill=tk.BOTH, expand=True, **pad)
+        # ---- Header ----
+        header = tk.Frame(self.root, bg=COLORS['bg'])
+        header.pack(fill=tk.X, padx=16, pady=(12, 8))
+        tk.Label(header, text="📄 InkDrop", font=('Segoe UI', 18, 'bold'),
+                 bg=COLORS['bg'], fg=COLORS['text']).pack(side=tk.LEFT)
+        tk.Label(header, text="喂给 AI 的文档预处理器",
+                 font=('Segoe UI', 9), bg=COLORS['bg'],
+                 fg=COLORS['muted']).pack(side=tk.LEFT, padx=(8, 0), pady=6)
 
-        self._listbox = tk.Listbox(list_frame, selectmode=tk.EXTENDED)
-        self._listbox.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
+        # ---- Toolbar ----
+        toolbar = tk.Frame(self.root, bg=COLORS['bg'])
+        toolbar.pack(fill=tk.X, **pad)
+
+        ttk.Button(toolbar, text="添加文件", command=self._add_files).pack(
+            side=tk.LEFT, padx=(0, 4))
+        ttk.Button(toolbar, text="移除所选", command=self._remove_selected).pack(
+            side=tk.LEFT, padx=4)
+        ttk.Button(toolbar, text="清空列表", command=self._clear_all).pack(
+            side=tk.LEFT, padx=4)
+
+        self.save_to_tool_var = tk.BooleanVar(value=False)
+        ttk.Checkbutton(toolbar, text="保存到工具目录",
+                        variable=self.save_to_tool_var).pack(
+            side=tk.LEFT, padx=12)
+
+        ttk.Button(toolbar, text="设置", command=self._open_settings).pack(
+            side=tk.RIGHT, padx=(4, 0))
+
+        # ---- File List (card style) ----
+        self._list_frame = ttk.LabelFrame(self.root, text="文件列表",
+                                           style='Card.TLabelframe')
+        self._list_frame.pack(fill=tk.BOTH, expand=True, **pad)
+
+        self._listbox = tk.Listbox(
+            self._list_frame, selectmode=tk.EXTENDED,
+            font=('Segoe UI', 9), bg=COLORS['card'],
+            fg=COLORS['text'], relief=tk.FLAT,
+            highlightthickness=1, highlightbackground=COLORS['border'],
+            selectbackground='#DBEAFE', selectforeground=COLORS['text'],
+        )
+        self._listbox.pack(side=tk.LEFT, fill=tk.BOTH, expand=True,
+                           padx=1, pady=1)
         self._listbox.drop_target_register("*")
         self._listbox.dnd_bind("<<Drop>>", self._on_drop)
 
         list_scroll = ttk.Scrollbar(
-            list_frame, orient=tk.VERTICAL, command=self._listbox.yview
-        )
+            self._list_frame, orient=tk.VERTICAL, command=self._listbox.yview)
         list_scroll.pack(side=tk.RIGHT, fill=tk.Y)
         self._listbox.config(yscrollcommand=list_scroll.set)
 
-        # 按钮栏
-        btn_frame = ttk.Frame(self.root)
-        btn_frame.pack(fill=tk.X, **pad)
+        # ---- Convert button + progress ----
+        convert_frame = tk.Frame(self.root, bg=COLORS['bg'])
+        convert_frame.pack(fill=tk.X, padx=16, pady=(6, 2))
 
-        ttk.Button(btn_frame, text="添加文件", command=self._add_files).pack(
-            side=tk.LEFT, padx=(0, 4)
+        self.convert_btn = tk.Button(
+            convert_frame, text="🚀 开始转换",
+            font=('Segoe UI', 12, 'bold'),
+            bg=COLORS['primary'], fg='white', relief=tk.FLAT,
+            padx=20, pady=8, cursor='hand2',
+            activebackground='#1D4ED8', activeforeground='white',
+            command=self._on_convert_click,
         )
-        ttk.Button(btn_frame, text="移除所选", command=self._remove_selected).pack(
-            side=tk.LEFT, padx=4
-        )
-        ttk.Button(btn_frame, text="清空列表", command=self._clear_all).pack(
-            side=tk.LEFT, padx=4
-        )
+        self.convert_btn.pack(fill=tk.X)
 
-        self.save_to_tool_var = tk.BooleanVar(value=False)
-        ttk.Checkbutton(
-            btn_frame,
-            text="保存到工具目录",
-            variable=self.save_to_tool_var,
-        ).pack(side=tk.LEFT, padx=12)
-
-        ttk.Button(btn_frame, text="设置", command=self._open_settings).pack(
-            side=tk.RIGHT, padx=(4, 0)
-        )
-
-        # 转换 / 取消按钮
-        self.convert_btn = ttk.Button(
-            self.root, text="转换 0 个文件", command=self._on_convert_click, width=22
-        )
-        self.convert_btn.pack(pady=(6, 2))
-
-        # 进度条
-        progress_frame = ttk.Frame(self.root)
-        progress_frame.pack(fill=tk.X, **pad)
+        # ---- Progress bar ----
+        progress_frame = tk.Frame(self.root, bg=COLORS['bg'])
+        progress_frame.pack(fill=tk.X, padx=16, pady=(2, 4))
 
         self.progress_bar = ttk.Progressbar(
-            progress_frame, mode="determinate", length=400
-        )
-        self.progress_bar.pack(side=tk.LEFT, fill=tk.X, expand=True, padx=(0, 8))
+            progress_frame, mode="determinate")
+        self.progress_bar.pack(side=tk.LEFT, fill=tk.X, expand=True,
+                               padx=(0, 8))
 
         self.progress_var = tk.StringVar(value="0 / 0")
-        ttk.Label(progress_frame, textvariable=self.progress_var, width=10).pack(
-            side=tk.RIGHT
-        )
+        ttk.Label(progress_frame, textvariable=self.progress_var,
+                  width=10, style='Count.TLabel').pack(side=tk.RIGHT)
 
-        # 结果区
-        result_frame = ttk.LabelFrame(self.root, text="转换结果")
-        result_frame.pack(fill=tk.BOTH, expand=True, **pad)
+        # ---- Results Notebook ----
+        self.notebook = ttk.Notebook(self.root)
+        self.notebook.pack(fill=tk.BOTH, expand=True, **pad)
+
+        # Tab 1: 转换结果
+        tab_results = ttk.Frame(self.notebook)
+        self.notebook.add(tab_results, text="📋 转换结果")
 
         self.results_text = tk.Text(
-            result_frame, height=8, wrap=tk.WORD, state=tk.DISABLED,
-            font=("Consolas", 9),
+            tab_results, wrap=tk.WORD, state=tk.DISABLED,
+            font=('Consolas', 9), bg=COLORS['card'], fg=COLORS['text'],
+            relief=tk.FLAT, highlightthickness=1,
+            highlightbackground=COLORS['border'],
         )
         self.results_text.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
 
         result_scroll = ttk.Scrollbar(
-            result_frame, orient=tk.VERTICAL, command=self.results_text.yview
-        )
+            tab_results, orient=tk.VERTICAL, command=self.results_text.yview)
         result_scroll.pack(side=tk.RIGHT, fill=tk.Y)
         self.results_text.config(yscrollcommand=result_scroll.set)
 
-        self.results_text.tag_config("ok", foreground="green", underline=True)
-        self.results_text.tag_config("warn", foreground="#CC8800", underline=True)
-        self.results_text.tag_config("fail", foreground="red")
-        self.results_text.tag_config("progress", foreground="royalblue")
-        self.results_text.tag_config("summary", foreground="black",
+        self.results_text.tag_config("ok", foreground=COLORS['success'],
+                                     underline=True)
+        self.results_text.tag_config("warn", foreground=COLORS['warning'],
+                                     underline=True)
+        self.results_text.tag_config("fail", foreground=COLORS['danger'])
+        self.results_text.tag_config("progress", foreground=COLORS['primary'])
+        self.results_text.tag_config("summary", foreground=COLORS['text'],
                                      font=("", 9, "bold"))
 
-        # 质量面板
-        self._build_quality_panel()
+        # Tab 2: 质量预览
+        tab_quality = ttk.Frame(self.notebook)
+        self.notebook.add(tab_quality, text="📊 质量预览")
+        self._build_quality_panel(tab_quality)
 
-        # 图片画廊 (初始隐藏)
+        # ---- Image gallery (initially hidden) ----
         self._build_image_gallery()
 
-        # Open All 按钮 (初始隐藏)
+        # ---- Open All button (initially hidden) ----
         self.open_all_btn = ttk.Button(
-            self.root, text="打开所有文件夹", command=self._open_all_folders
-        )
+            self.root, text="打开所有文件夹", command=self._open_all_folders)
+
+        # ---- Status bar ----
+        self._status_var = tk.StringVar(value="就绪")
+        status_bar = tk.Frame(self.root, bg=COLORS['border'], height=24)
+        status_bar.pack(fill=tk.X, side=tk.BOTTOM)
+        tk.Label(status_bar, textvariable=self._status_var,
+                 font=('Segoe UI', 8), bg=COLORS['border'],
+                 fg=COLORS['muted'], padx=12).pack(side=tk.LEFT)
 
     # ------ 质量面板 ------
 
-    def _build_quality_panel(self):
-        self._quality_frame = ttk.LabelFrame(self.root, text="质量预览")
-        self._quality_frame.pack(fill=tk.X, padx=10, pady=4)
+    def _build_quality_panel(self, parent):
+        self._quality_frame = parent
 
         self._quality_score_var = tk.StringVar(value="—")
         self._quality_heading_var = tk.StringVar(value="—")
@@ -762,31 +834,43 @@ class MarkItDownApp:
         self._quality_images_var = tk.StringVar(value="—")
         self._quality_garbled_var = tk.StringVar(value="—")
 
-        inner = ttk.Frame(self._quality_frame)
-        inner.pack(fill=tk.X, padx=8, pady=4)
+        inner = tk.Frame(parent, bg=COLORS['card'])
+        inner.pack(fill=tk.BOTH, expand=True, padx=16, pady=12)
 
-        ttk.Label(inner, text="质量分数:").grid(row=0, column=0, sticky=tk.W)
-        self._quality_score_label = ttk.Label(
-            inner, textvariable=self._quality_score_var,
-            font=("", 11, "bold"),
-        )
-        self._quality_score_label.grid(row=0, column=1, sticky=tk.W, padx=(4, 16))
+        # Score display with bar
+        score_frame = tk.Frame(inner, bg=COLORS['card'])
+        score_frame.pack(fill=tk.X, pady=(0, 12))
 
-        ttk.Label(inner, text="标题结构:").grid(row=0, column=2, sticky=tk.W)
-        ttk.Label(inner, textvariable=self._quality_heading_var).grid(
-            row=0, column=3, sticky=tk.W, padx=(4, 16))
+        tk.Label(score_frame, text="质量分数", font=('Segoe UI', 10),
+                 bg=COLORS['card'], fg=COLORS['muted']).pack(side=tk.LEFT)
+        self._quality_score_label = tk.Label(
+            score_frame, textvariable=self._quality_score_var,
+            font=('Segoe UI', 24, 'bold'), bg=COLORS['card'],
+            fg=COLORS['text'])
+        self._quality_score_label.pack(side=tk.LEFT, padx=(12, 0))
 
-        ttk.Label(inner, text="表格数:").grid(row=0, column=4, sticky=tk.W)
-        ttk.Label(inner, textvariable=self._quality_tables_var).grid(
-            row=0, column=5, sticky=tk.W, padx=(4, 16))
+        self._quality_score_bar = ttk.Progressbar(
+            score_frame, mode='determinate', length=200)
+        self._quality_score_bar.pack(side=tk.LEFT, padx=(12, 0))
 
-        ttk.Label(inner, text="图片数:").grid(row=0, column=6, sticky=tk.W)
-        ttk.Label(inner, textvariable=self._quality_images_var).grid(
-            row=0, column=7, sticky=tk.W, padx=(4, 16))
+        # Metrics
+        metrics_frame = tk.Frame(inner, bg=COLORS['card'])
+        metrics_frame.pack(fill=tk.X)
 
-        ttk.Label(inner, text="乱码:").grid(row=0, column=8, sticky=tk.W)
-        ttk.Label(inner, textvariable=self._quality_garbled_var).grid(
-            row=0, column=9, sticky=tk.W, padx=(4, 0))
+        for label_text, var in [
+            ("标题结构", self._quality_heading_var),
+            ("表格数", self._quality_tables_var),
+            ("图片数", self._quality_images_var),
+            ("乱码检测", self._quality_garbled_var),
+        ]:
+            row = tk.Frame(metrics_frame, bg=COLORS['card'])
+            row.pack(fill=tk.X, pady=3)
+            tk.Label(row, text=label_text, font=('Segoe UI', 9),
+                     bg=COLORS['card'], fg=COLORS['muted'],
+                     width=10, anchor='w').pack(side=tk.LEFT)
+            tk.Label(row, textvariable=var, font=('Segoe UI', 9, 'bold'),
+                     bg=COLORS['card'], fg=COLORS['text']).pack(
+                     side=tk.LEFT, padx=(8, 0))
 
     def _update_quality_panel(self, markdown: str):
         if not _HAS_QUALITY:
@@ -799,11 +883,13 @@ class MarkItDownApp:
 
         self._quality_score_var.set(str(report.score))
         if report.score >= 70:
-            self._quality_score_label.config(foreground="green")
+            color = COLORS['success']
         elif report.score >= 40:
-            self._quality_score_label.config(foreground="#CC8800")
+            color = COLORS['warning']
         else:
-            self._quality_score_label.config(foreground="red")
+            color = COLORS['danger']
+        self._quality_score_label.config(foreground=color)
+        self._quality_score_bar.configure(value=report.score)
 
         self._quality_heading_var.set(
             "✅ 正常" if report.heading_structure_ok else "⚠️ 层级断裂")
@@ -814,7 +900,8 @@ class MarkItDownApp:
 
     def _clear_quality_panel(self):
         self._quality_score_var.set("—")
-        self._quality_score_label.config(foreground="black")
+        self._quality_score_label.config(foreground=COLORS['text'])
+        self._quality_score_bar.configure(value=0)
         self._quality_heading_var.set("—")
         self._quality_tables_var.set("—")
         self._quality_images_var.set("—")
@@ -883,8 +970,8 @@ class MarkItDownApp:
                 name = name[:10] + "…"
             ttk.Label(frame, text=name, font=("", 7)).pack()
 
-        self._gallery_frame.pack(fill=tk.X, padx=10, pady=2,
-                                 before=self.open_all_btn)
+        self._gallery_frame.pack(fill=tk.X, padx=16, pady=2,
+                                 side=tk.BOTTOM)
 
     def _clear_image_gallery(self):
         for child in self._gallery_inner.winfo_children():
@@ -1016,12 +1103,14 @@ class MarkItDownApp:
         for p in self.file_paths:
             self._listbox.insert(tk.END, os.path.basename(p))
         n = len(self.file_paths)
+        self._list_frame.config(text=f"文件列表 ({n})" if n else "文件列表")
         self.convert_btn.config(
-            text=f"转换 {n} 个文件" if n else "转换 0 个文件",
+            text=f"🚀 开始转换 ({n})" if n else "🚀 开始转换",
             state=tk.NORMAL if n else tk.DISABLED,
         )
         self.progress_bar.configure(value=0)
         self.progress_var.set(f"0 / {n}" if n else "0 / 0")
+        self._status_var.set(f"{n} 个文件已添加" if n else "就绪")
         self._clear_results()
 
     # ------ 结果展示 ------
@@ -1425,16 +1514,20 @@ class MarkItDownApp:
         self.progress_var.set("0 / 0")
         n = len(self.file_paths)
         self.convert_btn.config(
-            text=f"转换 {n} 个文件" if n else "转换 0 个文件",
+            text=f"🚀 开始转换 ({n})" if n else "🚀 开始转换",
             state=tk.NORMAL if n else tk.DISABLED,
         )
         if not cancelled and self._result_folders:
-            self.open_all_btn.pack(pady=(0, 6))
+            self.open_all_btn.pack(fill=tk.X, padx=16, pady=(0, 4),
+                                   side=tk.BOTTOM)
             self._append_result(
                 f"({len(self._result_folders)} 个文件夹就绪 "
                 f"— 点击 [打开] 或下方的按钮)",
                 "progress",
             )
+            self._status_var.set(f"完成 — {len(self._result_folders)} 个文件夹就绪")
+        else:
+            self._status_var.set("就绪")
 
 
 # ============================================================
@@ -1564,6 +1657,8 @@ def main(argv: list[str] | None = None):
     # GUI
     _show_pymupdf_dialog(args)
     root = TkinterDnD.Tk()
+    _setup_styles()
+    root.configure(bg=COLORS['bg'])
     MarkItDownApp(root)
     root.lift()
     root.focus_force()
