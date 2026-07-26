@@ -11,8 +11,10 @@
 - 先写计划
 - 新建 venv 后先 `pip install -r requirements.txt`，否则所有文件都报 ModuleNotFoundError
 - `convert_one` 签名: `(filepath, output_root=None, md=None, use_pymupdf=True, on_conflict="rename")`，*md* 传入复用的 MarkItDown 实例；*filepath* 可为 http(s) URL
-- 改 GUI 前先读 `.interface-design/system.md`（设计决策已定）和
-  `.claude/skills/interface-design`；显示中文的组件禁用 Segoe UI/Consolas（无 CJK 字形）
+- 改 GUI 前先读 `.interface-design/system.md`（设计决策已定）；设计 skill 有两个：
+  `interface-design`（工艺纪律）、`ui-ux-pro-max`（可检索设计数据库，
+  `scripts/search.py "<查询>" --domain ux|style|color|typography`）
+- 显示中文的组件禁用 Segoe UI/Consolas（无 CJK 字形）；字体链 苹方 > Noto Sans SC > 雅黑
 - GUI 验证用 scratchpad 的 PrintWindow 截图脚本实看，不要只跑不看
 
 ## 运行环境
