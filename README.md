@@ -52,12 +52,14 @@ markitdown file.pdf > file.md
 ### 4.1 架构
 
 ```
-GUI (tkinterdnd2) → CLI (doc2md.py) → 引擎层 → 输出
-                         ↓
-              ┌─────────┴─────────┐
-         pdf_engine.py    doc_engine.py    sniffer.py
-         (PyMuPDF)        (aspose-words)   (filetype shim)
+CLI (doc2md.cli) → 转换管线 (doc2md.convert) → 引擎层 → 输出
+                              ↓
+                   ┌─────────┴─────────┐
+              engines/pdf.py      engines/doc.py
+              (PyMuPDF)           (aspose-words)
 ```
+
+GUI（tkinterdnd2）与打包设施（PyInstaller/CI）已随归档移除，历史见 Git 记录。
 
 ### 4.2 关键设计决策
 
@@ -80,21 +82,24 @@ GUI (tkinterdnd2) → CLI (doc2md.py) → 引擎层 → 输出
 
 ```
 markitdown-desktop/
-├── doc2md.py              # CLI 入口，零 GUI 依赖
-├── pdf_engine.py          # PDF 引擎（AGPL 隔离）
-├── doc_engine.py          # DOC 引擎
-├── sniffer.py             # 文件类型嗅探（magika API shim）
-├── build.ps1 / build.bat  # PyInstaller 构建脚本
-├── InkDrop.spec           # PyInstaller 配置
+├── doc2md/                # Python 包
+│   ├── __init__.py        # 公共 API（convert_one）
+│   ├── cli.py             # 命令行入口
+│   ├── convert.py         # 核心转换管线
+│   ├── images.py          # base64 图片落盘
+│   ├── quality.py         # 乱码/差异启发式
+│   └── engines/
+│       ├── pdf.py         # PDF 引擎（PyMuPDF，AGPL 隔离，懒加载）
+│       └── doc.py         # DOC 引擎（aspose-words-foss）
+├── pyproject.toml         # 打包与入口点（doc2md 命令）
 ├── requirements.txt       # 依赖清单
-├── CHANGELOG.md           # 16 版本迭代记录
+├── CHANGELOG.md           # 迭代记录
 ├── 复盘.md                 # 需求验证与工程决策记录
 ├── 文件阅读规范.md         # 各格式读写参考
-├── .github/workflows/     # CI 配置（已停用）
 └── README.md              # 本文件
 ```
 
-历史版本见 Git 记录：`git log --all --full-history -- versions/`
+历史版本（GUI、PyInstaller 构建、CI）见 Git 记录：`git log --all --full-history -- versions/ releases/ build.ps1`
 
 ---
 
@@ -102,8 +107,10 @@ markitdown-desktop/
 
 ```bash
 pip install -r requirements.txt
-python doc2md.py file.pdf              # CLI 直接运行
-powershell -File build.ps1              # 构建 GUI 产物（约 84MB）
+python -m doc2md file.pdf              # 仓库内直接运行
+# 或安装为命令：
+pip install .
+doc2md file.pdf --out ./output/
 ```
 
 ---

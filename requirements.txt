@@ -1,11 +1,6 @@
-# MarkItDown GUI — 直接依赖
-# Python 3.12+
+# doc2md — 直接依赖
+# Python 3.10+
 
 markitdown[all]==0.1.6
-tkinterdnd2==0.4.4.1
-PyMuPDF==1.27.2.3         # AGPL, PDF 图片提取, pdf_engine 隔离
-filetype==1.2.0            # magika shim 后端
+PyMuPDF==1.27.2.3         # AGPL, PDF 文字纠错 + 图片提取, engines/pdf.py 隔离
 aspose-words-foss==26.5.0  # MIT, .doc→.docx 引擎
-
-# 构建工具
-pyinstaller==6.20.0
