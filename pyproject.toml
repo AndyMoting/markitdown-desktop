@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "doc2md"
-version = "2.0.0"
+version = "2.2.0"
 description = "Convert documents (PDF/DOC/DOCX/PPTX/XLSX/...) to Markdown with image extraction"
 readme = "README.md"
 requires-python = ">=3.10"
@@ -16,10 +16,18 @@ dependencies = [
 [project.optional-dependencies]
 pdf = ["PyMuPDF==1.27.2.3"]        # AGPL — PDF text correction + embedded image extraction
 doc = ["aspose-words-foss==26.5.0"] # MIT — legacy .doc -> .docx bridge
-all = ["doc2md[pdf,doc]"]
+gui = [  # MIT 全家 — 现代化窗口/拖拽/缩略图
+    "customtkinter==6.0.0",
+    "tkinterdnd2==0.4.4.1",
+    "Pillow==12.2.0",
+]
+all = ["doc2md[pdf,doc,gui]"]
 
 [project.scripts]
 doc2md = "doc2md.cli:main"
+
+[project.gui-scripts]
+doc2md-gui = "doc2md.gui:main"
 
 [tool.setuptools.packages.find]
 include = ["doc2md*"]
