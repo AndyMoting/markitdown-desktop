@@ -1055,7 +1055,12 @@ class MarkItDownApp:
 
     # ------ 设置 ------
 
+    @staticmethod
+    def _short_path(p: str, limit: int = 46) -> str:
+        return p if len(p) <= limit else p[:22] + "…" + p[-23:]
+
     def _open_settings(self):
+        """设置窗 — Win11/macOS 式设置行: 左标题+副注, 右控件, 行入分组卡。"""
         dialog = ctk.CTkToplevel(self.root)
         dialog.title("设置")
         dialog.resizable(False, False)
@@ -1063,61 +1068,68 @@ class MarkItDownApp:
         dialog.configure(fg_color=C('bg'))
         dialog.after(200, dialog.grab_set)
 
-        body = ctk.CTkFrame(dialog, fg_color="transparent")
-        body.pack(fill=tk.BOTH, padx=28, pady=20)
+        body = ctk.CTkFrame(dialog, fg_color="transparent", width=600)
+        body.pack(fill=tk.BOTH, padx=24, pady=(18, 16))
 
-        def section(text, top=14):
-            ctk.CTkLabel(body, text=text,
+        def group(title, first=False):
+            ctk.CTkLabel(body, text=title,
                          font=ctk.CTkFont(family=FONT, size=12,
                                           weight="bold"),
-                         text_color=C('text')).pack(anchor=tk.W,
-                                                    pady=(top, 2))
+                         text_color=C('muted')).pack(
+                anchor=tk.W, pady=((0 if first else 14), 6))
+            card = ctk.CTkFrame(body, fg_color=C('card'), corner_radius=10,
+                                border_width=1, border_color=C('border'))
+            card.pack(fill=tk.X)
+            return card
 
-        def hint(text):
-            ctk.CTkLabel(body, text=text,
-                         font=ctk.CTkFont(family=FONT, size=11),
-                         text_color=C('muted')).pack(anchor=tk.W)
+        def row(card, title, subtitle, first=False, subtitle_var=None):
+            """一条设置行: 左侧标题+副注, 返回右侧控件容器。"""
+            r = ctk.CTkFrame(card, fg_color="transparent")
+            r.pack(fill=tk.X, padx=16, pady=(12 if first else 7, 7))
+            txt = ctk.CTkFrame(r, fg_color="transparent")
+            txt.pack(side=tk.LEFT, fill=tk.X, expand=True)
+            ctk.CTkLabel(txt, text=title, anchor="w",
+                         font=ctk.CTkFont(family=FONT, size=13),
+                         text_color=C('text')).pack(anchor=tk.W)
+            sub_kw = dict(anchor="w",
+                          font=ctk.CTkFont(family=FONT, size=11),
+                          text_color=C('muted'))
+            if subtitle_var is not None:
+                ctk.CTkLabel(txt, textvariable=subtitle_var,
+                             **sub_kw).pack(anchor=tk.W)
+            else:
+                ctk.CTkLabel(txt, text=subtitle, **sub_kw).pack(anchor=tk.W)
+            ctrl = ctk.CTkFrame(r, fg_color="transparent")
+            ctrl.pack(side=tk.RIGHT, padx=(16, 0))
+            return ctrl
 
-        switch_kw = dict(
-            font=ctk.CTkFont(family=FONT, size=12),
-            text_color=C('text'),
-            progress_color=C('accent'), fg_color=C('select'),
-            button_color=('#FFFFFF', '#E8E3DA'),
-            button_hover_color=('#F6F4EF', '#CFC9BD'),
-        )
-
-        # ---- 外观 ----
-        section("外观", top=0)
-        appearance_map = {"跟随系统": "system", "浅色": "light",
-                          "深色": "dark"}
-        appearance_rev = {v: k for k, v in appearance_map.items()}
-
-        def on_appearance(label):
-            mode = appearance_map[label]
-            if not _config_set("appearance", mode):
-                messagebox.showerror("错误", "保存设置失败", parent=dialog)
-                return
-            ctk.set_appearance_mode(mode)
-            self._apply_tk_theme()
-
-        appearance_seg = ctk.CTkSegmentedButton(
-            body, values=list(appearance_map),
-            command=on_appearance,
-            font=ctk.CTkFont(family=FONT, size=12),
+        seg_kw = dict(
+            font=ctk.CTkFont(family=FONT, size=12), height=26,
             selected_color=('#D6D0C4', '#4A4438'),
             selected_hover_color=('#CFC9BD', '#554E40'),
             unselected_color=C('select'),
             unselected_hover_color=C('ghost_hover'),
-            text_color=C('text'),
-            fg_color=C('select'),
+            text_color=C('text'), fg_color=C('select'),
         )
-        appearance_seg.set(appearance_rev.get(
-            _config_get("appearance") or "system", "跟随系统"))
-        appearance_seg.pack(anchor=tk.W, pady=(4, 0))
+        # 注意: 钮色不能用纯白 — 白卡背景上圆钮会隐形只剩轨道
+        switch_kw = dict(
+            text="",
+            progress_color=C('accent'), fg_color=C('select'),
+            button_color=('#5F594F', '#E8E3DA'),
+            button_hover_color=('#4A453C', '#CFC9BD'),
+        )
+        btn_kw = dict(
+            height=28, corner_radius=8,
+            font=ctk.CTkFont(family=FONT, size=12),
+            fg_color="transparent", hover_color=C('ghost_hover'),
+            border_width=1, border_color=C('border'),
+            text_color=C('text'),
+        )
 
-        # ---- 同名输出 ----
-        section("同名输出")
-        hint("输出目录已存在时如何处理")
+        # ============ 转换 ============
+        conv = group("转换", first=True)
+
+        # -- 同名输出 --
         conflict_map = {"加序号": "rename", "覆盖": "overwrite",
                         "跳过": "skip"}
         conflict_rev = {v: k for k, v in conflict_map.items()}
@@ -1126,25 +1138,15 @@ class MarkItDownApp:
             if not _config_set("on_conflict", conflict_map[label]):
                 messagebox.showerror("错误", "保存设置失败", parent=dialog)
 
+        c = row(conv, "同名输出", "输出目录已存在时如何处理", first=True)
         conflict_seg = ctk.CTkSegmentedButton(
-            body, values=list(conflict_map),
-            command=on_conflict_change,
-            font=ctk.CTkFont(family=FONT, size=12),
-            selected_color=('#D6D0C4', '#4A4438'),
-            selected_hover_color=('#CFC9BD', '#554E40'),
-            unselected_color=C('select'),
-            unselected_hover_color=C('ghost_hover'),
-            text_color=C('text'),
-            fg_color=C('select'),
-        )
+            c, values=list(conflict_map), command=on_conflict_change,
+            **seg_kw)
         conflict_seg.set(conflict_rev.get(
             _config_get("on_conflict") or "rename", "加序号"))
-        conflict_seg.pack(anchor=tk.W, pady=(6, 0))
+        conflict_seg.pack()
 
-        # ---- PyMuPDF ----
-        section("PDF 图片提取 (PyMuPDF)")
-        hint("AGPL-3.0 协议组件, 用于 PDF 文字纠错与内嵌图片提取")
-
+        # -- PyMuPDF --
         pymupdf_var = tk.BooleanVar(
             value=_config_get("pymupdf_accepted") is True)
 
@@ -1177,27 +1179,24 @@ class MarkItDownApp:
                     messagebox.showerror("错误", "保存设置失败", parent=dialog)
                     pymupdf_var.set(True)
 
-        ctk.CTkSwitch(body, text="启用 PyMuPDF", variable=pymupdf_var,
-                      command=toggle_pymupdf, **switch_kw).pack(
-            anchor=tk.W, pady=(6, 0))
+        c = row(conv, "PDF 图片提取",
+                "PyMuPDF · AGPL-3.0 · 文字纠错与内嵌图片")
+        ctk.CTkSwitch(c, variable=pymupdf_var, command=toggle_pymupdf,
+                      **switch_kw).pack()
 
-        # ---- DOC 引擎 ----
-        section("旧版 Word 文档 (.doc)")
+        # -- .doc 引擎状态 --
         doc_ok = doc_engine.is_available()
-        hint("已就绪 (aspose-words-foss, MIT)" if doc_ok
-             else "不可用 — pip install doc2md[doc]")
+        c = row(conv, "旧版 Word 文档 (.doc)", "aspose-words-foss · MIT")
+        ctk.CTkLabel(c, text="已就绪" if doc_ok else "不可用",
+                     font=ctk.CTkFont(family=FONT, size=12, weight="bold"),
+                     text_color=C('success') if doc_ok
+                     else C('danger')).pack()
 
-        # ---- 输出目录 ----
-        section("自定义输出目录")
+        # -- 输出目录 --
         current_output = _config_get("output_dir")
         output_var = tk.StringVar(
-            value=current_output or "未设置 (默认: 源文件所在目录)")
-        ctk.CTkLabel(body, textvariable=output_var,
-                     font=ctk.CTkFont(family=FONT, size=11),
-                     text_color=C('muted')).pack(anchor=tk.W)
-
-        out_row = ctk.CTkFrame(body, fg_color="transparent")
-        out_row.pack(anchor=tk.W, pady=(6, 0))
+            value=self._short_path(current_output)
+            if current_output else "未设置 · 默认输出到源文件所在目录")
 
         def choose_output_dir():
             path = filedialog.askdirectory(
@@ -1210,32 +1209,47 @@ class MarkItDownApp:
                     messagebox.showerror("错误", "保存设置失败",
                                          parent=dialog)
                     return
-                output_var.set(path)
+                output_var.set(self._short_path(path))
 
         def clear_output_dir():
             if not _config_set("output_dir", ""):
                 messagebox.showerror("错误", "保存设置失败", parent=dialog)
                 return
-            output_var.set("未设置 (默认: 源文件所在目录)")
+            output_var.set("未设置 · 默认输出到源文件所在目录")
 
-        btn_kw = dict(
-            height=30, corner_radius=8,
-            font=ctk.CTkFont(family=FONT, size=12),
-            fg_color="transparent", hover_color=C('ghost_hover'),
-            border_width=1, border_color=C('border'),
-            text_color=C('text'),
-        )
-        ctk.CTkButton(out_row, text="选择…", width=80,
+        c = row(conv, "输出目录", "", subtitle_var=output_var)
+        ctk.CTkButton(c, text="选择…", width=68,
                       command=choose_output_dir, **btn_kw).pack(
             side=tk.LEFT)
-        ctk.CTkButton(out_row, text="清除", width=64,
+        ctk.CTkButton(c, text="清除", width=56,
                       command=clear_output_dir, **btn_kw).pack(
-            side=tk.LEFT, padx=(8, 0))
+            side=tk.LEFT, padx=(6, 0))
 
-        # ---- 调试日志 ----
-        section("调试日志")
-        hint("警告和错误始终记录")
+        # ============ 应用 ============
+        app_card = group("应用")
 
+        # -- 外观 --
+        appearance_map = {"跟随系统": "system", "浅色": "light",
+                          "深色": "dark"}
+        appearance_rev = {v: k for k, v in appearance_map.items()}
+
+        def on_appearance(label):
+            mode = appearance_map[label]
+            if not _config_set("appearance", mode):
+                messagebox.showerror("错误", "保存设置失败", parent=dialog)
+                return
+            ctk.set_appearance_mode(mode)
+            self._apply_tk_theme()
+
+        c = row(app_card, "外观", "主题与窗口配色", first=True)
+        appearance_seg = ctk.CTkSegmentedButton(
+            c, values=list(appearance_map), command=on_appearance,
+            **seg_kw)
+        appearance_seg.set(appearance_rev.get(
+            _config_get("appearance") or "system", "跟随系统"))
+        appearance_seg.pack()
+
+        # -- 调试日志 --
         debug_var = tk.BooleanVar(
             value=_config_get("debug_enabled") is True)
 
@@ -1247,18 +1261,11 @@ class MarkItDownApp:
                 return
             _configure_log_levels(new_state)
 
-        ctk.CTkSwitch(body, text="开启调试日志", variable=debug_var,
-                      command=toggle_debug, **switch_kw).pack(
-            anchor=tk.W, pady=(6, 0))
+        c = row(app_card, "调试日志", "警告和错误始终记录")
+        ctk.CTkSwitch(c, variable=debug_var, command=toggle_debug,
+                      **switch_kw).pack()
 
-        # ---- 目录 ----
-        section("目录")
-        hint(f"日志: {_LOG_DIR}")
-        hint(f"配置: {_CONFIG_DIR}")
-
-        dir_row = ctk.CTkFrame(body, fg_color="transparent")
-        dir_row.pack(anchor=tk.W, pady=(6, 0), fill=tk.X)
-
+        # -- 数据目录 --
         def open_log_dir():
             _LOG_DIR.mkdir(parents=True, exist_ok=True)
             os.startfile(str(_LOG_DIR))
@@ -1267,18 +1274,24 @@ class MarkItDownApp:
             _CONFIG_DIR.mkdir(parents=True, exist_ok=True)
             os.startfile(str(_CONFIG_DIR))
 
-        ctk.CTkButton(dir_row, text="打开日志目录", width=104,
+        c = row(app_card, "数据目录", self._short_path(str(_APP_DIR)))
+        ctk.CTkButton(c, text="日志", width=56,
                       command=open_log_dir, **btn_kw).pack(side=tk.LEFT)
-        ctk.CTkButton(dir_row, text="打开配置目录", width=104,
+        ctk.CTkButton(c, text="配置", width=56,
                       command=open_config_dir, **btn_kw).pack(
-            side=tk.LEFT, padx=(8, 0))
-        ctk.CTkButton(dir_row, text="关闭", width=64,
-                      command=dialog.destroy,
-                      height=30, corner_radius=8,
+            side=tk.LEFT, padx=(6, 0))
+
+        # ============ 底部按钮行 ============
+        footer = ctk.CTkFrame(body, fg_color="transparent")
+        footer.pack(fill=tk.X, pady=(14, 0))
+        ctk.CTkButton(footer, text="关闭", width=80, height=30,
+                      corner_radius=8,
                       font=ctk.CTkFont(family=FONT, size=12),
                       fg_color=C('primary'),
                       hover_color=C('primary_hover'),
-                      text_color=C('primary_text')).pack(side=tk.RIGHT)
+                      text_color=C('primary_text'),
+                      command=dialog.destroy).pack(side=tk.RIGHT)
+        dialog.bind("<Escape>", lambda _: dialog.destroy())
 
         # 居中 (只定位不定尺寸 — CTk 会对 geometry 的宽高二次缩放)
         dialog.update_idletasks()

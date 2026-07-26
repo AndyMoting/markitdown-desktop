@@ -60,6 +60,9 @@ CustomTkinter 6.0 (圆角/主题/hover 由库承担) + tk 原生 Listbox/Text/Ca
   (selected #D6D0C4/#4A4438, text 用 text 令牌)
 - 段选(视图切换) — 右列 "转换回执|预览" 与设置窗同款纸色段选;
   互斥卡片用 grid 同格 + grid_remove 切换
+- 设置行 (Win11/macOS 逻辑) — 每个设置一行: 左标题 13 + 副注 11 muted,
+  右控件垂直居中; 行入分组卡片(组名在卡外), 单列 ~600 宽;
+  开关钮色禁纯白 (白卡上隐形, 用 #5F594F/#E8E3DA)
 - 选中行高亮 — 回执行整行 tag `file_{i}` 可点击, 选中加 `selline`
   背景 tag (select 令牌) 并 tag_lower 垫底, 不盖语义前景色;
   链接 tag 用自增序号命名, 禁止用列表长度 (跳过行会导致重名改绑)
