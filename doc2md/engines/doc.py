@@ -11,7 +11,7 @@ import os
 import tempfile
 from pathlib import Path
 
-_log = logging.getLogger("inkdrop")
+_log = logging.getLogger("doc2md")
 _aw = None
 
 

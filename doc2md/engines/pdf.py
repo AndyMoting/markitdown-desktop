@@ -7,7 +7,7 @@ To swap engines, replace the bodies of open_pdf / extract_text / extract_images.
 import logging
 import os
 
-_log = logging.getLogger("inkdrop")
+_log = logging.getLogger("doc2md")
 _fitz = None
 
 

@@ -1,5 +1,20 @@
 # CHANGELOG
 
+## v2.0.0 — 2026-07-26
+
+**重构**: 平铺脚本 → `doc2md` Python 包。
+
+- `doc2md.py` 拆分为 `doc2md/` 包：`cli.py`（命令行）、`convert.py`（管线）、`images.py`（base64 图片落盘）、`quality.py`（乱码/差异启发式）、`engines/pdf.py`、`engines/doc.py`
+- `doc2md.py` 内联的 PyMuPDF/aspose 代码与 `pdf_engine.py`/`doc_engine.py` 薄接口本是重复实现，合并为 `engines/` 单一实现
+- 模块级 `_CONFIG["pymupdf_accepted"]` 全局状态改为 `convert_one(..., use_pymupdf=True)` 参数
+- 新增 `pyproject.toml`：`pip install .` 后可直接 `doc2md file.pdf`；PyMuPDF (AGPL) 与 aspose 声明为 optional extras（`doc2md[pdf,doc]`），requirements.txt 保留全量安装
+- 删除失效的 GUI 构建遗留：`InkDrop.spec`、`build.ps1`/`build.bat`、CI workflow（均指向已删除的 `releases/v1.0.0.py`）、`sniffer.py`（PyInstaller 体积优化 shim，CLI 不引用）
+- requirements.txt 移除 tkinterdnd2、filetype、pyinstaller
+
+**行为不变**：CLI 参数、输出目录规则、PDF 双引擎纠错逻辑与 v1.0.1 一致。
+
+---
+
 ## v1.0.1 — 2026-06-08
 
 **致命修复**: `root.after()` 关键字参数 bug。

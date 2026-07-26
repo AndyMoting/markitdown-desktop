@@ -1,43 +1,34 @@
-# InkDrop
+# doc2md（原 InkDrop）
 
-给 markitdown 做 Windows GUI，打包为便携 exe。项目目录 `D:\Projects\MD\`。
+项目已归档。GUI 与打包设施已移除，现存形态是 `doc2md` CLI 包。
 
 ## 铁律
 
 - **commit 不加 Co-Authored-By**，不挂 AI 名字在贡献者列表
-- **版本独立文件** `versions/vN_xxx.py`，历史快照，不修不改不合入。后续只改 `releases/v*py`
 - `CHANGELOG.md` 每版必记
 - 先写计划
 - 新建 venv 后先 `pip install -r requirements.txt`，否则所有文件都报 ModuleNotFoundError
-- `_convert_one` 签名: `(filepath, save_to_tool, md=None)`，第三个参数传入复用的 MarkItDown 实例。CLI 的 `_headless_convert` 同理复用
+- `convert_one` 签名: `(filepath, output_root=None, md=None, use_pymupdf=True)`，*md* 传入复用的 MarkItDown 实例
 
 ## 运行环境
 
 - venv: `D:\Projects\.venv\Scripts\python.exe`（Python 3.12）
-- 依赖见 `requirements.txt`。PyMuPDF (AGPL) 已隔离，可替换；其余 MIT/BSD。
+- 依赖见 `requirements.txt`。PyMuPDF (AGPL) 已隔离在 `doc2md/engines/pdf.py`（懒加载），可替换；其余 MIT/BSD。
 
-## 当前状态（2026-06-08）
+## 当前状态（2026-07-26）
 
 ```
-D:\Projects\MD\
+markitdown-desktop/
+├── doc2md/             # Python 包（结构见 README §5）
+├── pyproject.toml      # 打包与入口点（doc2md 命令）
+├── requirements.txt
 ├── README.md           # 对外
 ├── CHANGELOG.md        # 对内，每版必记
-├── CLAUDE.md           # 本文件
-├── requirements.txt
-├── pdf_engine.py       # PDF 引擎薄接口 (PyMuPDF)
-├── doc_engine.py       # DOC 引擎薄接口 (aspose-words-foss)
-├── sniffer.py          # magika→filetype shim
-├── InkDrop.spec        # PyInstaller 配置
-├── build.bat / build.ps1  # 双击/CLI 构建
-├── .github/workflows/  # CI（tag 触发自动发版）
-├── .gitignore
-├── versions/           # 开发迭代
-│   ├── v1_demo.py
-│   ├── ...
-│   └── v14_custom_output.py
-├── releases/           # 发布版本
-│   └── v1.0.0.py       # 当前发布
+└── CLAUDE.md           # 本文件
 ```
+
+运行：仓库根 `python -m doc2md file.pdf`，或 `pip install .` 后 `doc2md file.pdf`。
+历史（GUI versions/releases、PyInstaller、CI）全部在 Git 记录里。
 
 ## 版本历史
 
@@ -58,14 +49,6 @@ D:\Projects\MD\
 | v13 | _convert_one 拆分为 6 函数 + MarkItDown 实例复用 + 去死代码 | done |
 | v14 | 自定义输出目录、config 移 exe 同级 | done |
 | v1.0.0 | 首次正式发布 | done |
-
-## 构建与发布
-
-- 双击 `build.bat` 交互式构建（选版本+ZIP），命令行 `.\build.ps1 -Version latest -NoPause`
-- UPX 装到 `D:\Tools\upx\`，构建时自动压缩（165→84 MB）
-- CI: push tag `v*` 自动构建 + Release；也可 GitHub Actions 页面手动触发
-- exe 名 `InkDrop.exe`，输出 `dist\InkDrop\`，ZIP `dist\InkDrop.zip`
-- PyInstaller stderr 用 .NET Process 流式输出（PS 5.1 兼容）
 
 ## 改名记录 (2026-06-07)
 
