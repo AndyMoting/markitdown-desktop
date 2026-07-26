@@ -1,5 +1,29 @@
 # CHANGELOG
 
+## v2.2.0 — 2026-07-26
+
+**体验补全四件套**: 同名输出策略、URL 转换、回执行联动、Markdown 预览。
+
+- **同名输出策略**: `convert_one(..., on_conflict="rename|overwrite|skip")`。
+  overwrite/skip 带护栏——只有目录含 `{base}.md` 或为空才认作我们的输出,
+  否则回落加序号, 防误删用户目录。CLI `--on-conflict`, 汇总加 `N skipped`;
+  GUI 设置加"同名输出"段选, 跳过的文件回执显示 `↷ 已跳过` (带 [打开])
+- **URL 转 Markdown**: `convert_one` 接受 http(s) 源 (跳过 .doc/.ppt/PDF
+  后处理分支); 新公共函数 `output_base_name()` 统一本地/URL 基名推导
+  (URL 取路径末段/域名并清洗)。CLI 放行 URL; GUI 加"添加链接"输入框、
+  支持拖放链接文本, URL 输出默认收进 `~/Documents/doc2md`
+- **回执行联动**: 每个成功文件的回执行可点击, 质量条/图片条/预览随选中
+  切换, 选中行背景高亮, 质量条右侧显示当前文件名; 默认选中最新完成
+- **Markdown 预览**: 右列"转换回执 | 预览"段选切换, 预览显示选中结果的
+  原始 markdown (只读, 主题跟随)
+- 修 bug: 回执 [打开] 链接 tag 用 `len(_result_folders)` 命名, 跳过行不入
+  列表时会 tag 重名导致旧链接被改绑 → 改自增序号
+
+**验证**: CLI 三种 on_conflict + 护栏场景 (用户目录同名不被删) + URL 转换
+实测; GUI 批量两文件截图验证联动/高亮/预览/深色主题, URL 全链路无头实测。
+
+---
+
 ## v2.1.0 — 2026-07-26
 
 **重启**: 解除归档, 桌面 GUI 回归 (`doc2md/gui.py`, `doc2md-gui` 入口)。

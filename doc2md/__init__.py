@@ -6,6 +6,6 @@ Supports: PDF, DOC, DOCX, PPTX, XLSX, XLS, HTML, CSV, JSON, XML, TXT,
 
 from doc2md.convert import convert_one
 
-__version__ = "2.1.0"
+__version__ = "2.2.0"
 
 __all__ = ["convert_one", "__version__"]

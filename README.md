@@ -23,12 +23,17 @@ pip install .[all]       # CLI + PDF 纠错 + .doc 支持 + GUI
 # CLI
 doc2md report.pdf                     # 输出到源文件旁 report_md/
 doc2md --out ./output/ a.docx b.pptx  # 批量 + 指定输出目录
+doc2md https://example.com/post -o .  # 网页转 Markdown
+doc2md --on-conflict skip *.pdf       # 同名输出: rename(默认)/overwrite/skip
 python -m doc2md file.pdf             # 不安装直接跑
 
-# GUI（拖拽、批量队列、转换回执、质量分、深浅主题）
+# GUI（拖拽、批量队列、转换回执、质量分、Markdown 预览、深浅主题）
 doc2md-gui
 python -m doc2md.gui
 ```
+
+GUI 里：回执行可点击，质量条/图片条/预览随选中的文件切换；「添加链接」
+或直接拖入链接可转网页（输出默认收进 `~/Documents/doc2md`）。
 
 输出结构：
 

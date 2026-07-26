@@ -32,7 +32,7 @@ except ImportError:
     _HAS_PIL = False
 
 from doc2md import __version__ as VERSION
-from doc2md.convert import convert_one
+from doc2md.convert import convert_one, is_url, output_base_name
 from doc2md.engines import doc as doc_engine
 from doc2md.engines import pdf as pdf_engine
 from doc2md.quality import check_quality
@@ -91,6 +91,7 @@ _DEFAULT_CONFIG = {
     "debug_enabled": False,
     "output_dir": "",
     "appearance": "system",
+    "on_conflict": "rename",
 }
 
 
@@ -211,7 +212,7 @@ def _collect_image_paths(images_dir: str) -> list[str]:
 
 def _read_output(filepath: str, output_dir: str) -> tuple[str, list[str]]:
     """从输出目录读回 markdown 文本和图片列表, 供质量条/图片条用。"""
-    base_name = os.path.splitext(os.path.basename(filepath))[0]
+    base_name = output_base_name(filepath)
     md_file = os.path.join(output_dir, f"{base_name}.md")
     markdown = ""
     try:
@@ -236,6 +237,9 @@ class MarkItDownApp:
         self.running = False
         self.cancel_event = threading.Event()
         self._result_folders: list[str] = []
+        self._file_results: list[dict] = []
+        self._selected_idx: int | None = None
+        self._link_seq = 0
 
         self.root.title(f"doc2md v{VERSION}")
         self.root.resizable(True, True)
@@ -302,7 +306,8 @@ class MarkItDownApp:
                         if fpath not in self.file_paths:
                             self.file_paths.append(fpath)
                             added += 1
-            elif os.path.isfile(p) and p not in self.file_paths:
+            elif (os.path.isfile(p) or is_url(p)) \
+                    and p not in self.file_paths:
                 self.file_paths.append(p)
                 added += 1
         if added:
@@ -389,6 +394,8 @@ class MarkItDownApp:
         self._queue_caption.pack(side=tk.LEFT)
         self._ghost_btn(cap_row, "＋ 添加文件", self._add_files,
                         accent=True).pack(side=tk.RIGHT)
+        self._ghost_btn(cap_row, "添加链接", self._add_url).pack(
+            side=tk.RIGHT, padx=(0, 2))
 
         list_card = ctk.CTkFrame(left, fg_color=C('card'), corner_radius=10,
                                  border_width=1, border_color=C('border'))
@@ -460,18 +467,27 @@ class MarkItDownApp:
         right.grid_rowconfigure(1, weight=1)
         right.grid_columnconfigure(0, weight=1)
 
-        ctk.CTkLabel(right, text="转换回执",
-                     font=ctk.CTkFont(family=FONT, size=12, weight="bold"),
-                     text_color=C('muted')).grid(
-            row=0, column=0, sticky=tk.W, pady=(0, 6))
+        seg_style = dict(
+            font=ctk.CTkFont(family=FONT, size=12), height=26,
+            selected_color=('#D6D0C4', '#4A4438'),
+            selected_hover_color=('#CFC9BD', '#554E40'),
+            unselected_color=C('select'),
+            unselected_hover_color=C('ghost_hover'),
+            text_color=C('text'), fg_color=C('select'),
+        )
+        self._view_seg = ctk.CTkSegmentedButton(
+            right, values=["转换回执", "预览"],
+            command=self._on_view_change, **seg_style)
+        self._view_seg.set("转换回执")
+        self._view_seg.grid(row=0, column=0, sticky=tk.W, pady=(0, 6))
 
-        results_card = ctk.CTkFrame(right, fg_color=C('card'),
-                                    corner_radius=10,
-                                    border_width=1, border_color=C('border'))
-        results_card.grid(row=1, column=0, sticky=tk.NSEW)
+        self._results_card = ctk.CTkFrame(right, fg_color=C('card'),
+                                          corner_radius=10, border_width=1,
+                                          border_color=C('border'))
+        self._results_card.grid(row=1, column=0, sticky=tk.NSEW)
 
         self.results_text = tk.Text(
-            results_card, wrap=tk.WORD, state=tk.DISABLED,
+            self._results_card, wrap=tk.WORD, state=tk.DISABLED,
             font=(FONT, 9), relief=tk.FLAT, borderwidth=0,
             highlightthickness=0, padx=12, pady=10, spacing3=4,
         )
@@ -479,11 +495,34 @@ class MarkItDownApp:
                                padx=(2, 0), pady=2)
 
         self._result_scroll = ctk.CTkScrollbar(
-            results_card, orientation="vertical",
+            self._results_card, orientation="vertical",
             command=self.results_text.yview, width=12)
         self._result_scroll.pack(side=tk.RIGHT, fill=tk.Y, padx=(0, 4),
                                  pady=10)
         self.results_text.config(yscrollcommand=self._result_scroll.set)
+
+        # ---- 预览卡 (与回执卡同格, 段选切换) ----
+        self._preview_card = ctk.CTkFrame(right, fg_color=C('card'),
+                                          corner_radius=10, border_width=1,
+                                          border_color=C('border'))
+        self._preview_card.grid(row=1, column=0, sticky=tk.NSEW)
+
+        self.preview_text = tk.Text(
+            self._preview_card, wrap=tk.WORD, state=tk.DISABLED,
+            font=(FONT, 9), relief=tk.FLAT, borderwidth=0,
+            highlightthickness=0, padx=12, pady=10, spacing3=2,
+        )
+        self.preview_text.pack(side=tk.LEFT, fill=tk.BOTH, expand=True,
+                               padx=(2, 0), pady=2)
+
+        self._preview_scroll = ctk.CTkScrollbar(
+            self._preview_card, orientation="vertical",
+            command=self.preview_text.yview, width=12)
+        self._preview_scroll.pack(side=tk.RIGHT, fill=tk.Y, padx=(0, 4),
+                                  pady=10)
+        self.preview_text.config(yscrollcommand=self._preview_scroll.set)
+        self._preview_placeholder = True
+        self._preview_card.grid_remove()
 
         # ---- 质量条 (row=2) ----
         self._build_quality_strip(right)
@@ -512,6 +551,25 @@ class MarkItDownApp:
                      font=ctk.CTkFont(family=FONT, size=11),
                      text_color=C('muted')).pack(side=tk.LEFT, padx=14)
 
+    # ------ 回执/预览 视图切换 ------
+
+    def _on_view_change(self, label):
+        if label == "预览":
+            self._results_card.grid_remove()
+            self._preview_card.grid()
+        else:
+            self._preview_card.grid_remove()
+            self._results_card.grid()
+
+    def _set_preview(self, content: str, placeholder: bool = False):
+        self._preview_placeholder = placeholder
+        self.preview_text.config(state=tk.NORMAL)
+        self.preview_text.delete("1.0", tk.END)
+        self.preview_text.insert(tk.END, content)
+        self.preview_text.config(
+            state=tk.DISABLED,
+            fg=CR('muted') if placeholder else CR('text'))
+
     # ------ 主题应用 (tk 原生组件手动跟随) ------
 
     def _apply_tk_theme(self):
@@ -520,7 +578,10 @@ class MarkItDownApp:
             bg=card, fg=text,
             selectbackground=CR('select'), selectforeground=text)
         self._empty_hint.config(bg=card, fg=muted)
+        self.preview_text.config(
+            bg=card, fg=muted if self._preview_placeholder else text)
         self.results_text.config(bg=card, fg=text)
+        self.results_text.tag_config("selline", background=CR('select'))
         self.results_text.tag_config("ok", foreground=CR('success'))
         self.results_text.tag_config("warn", foreground=CR('warning'))
         self.results_text.tag_config("fail", foreground=CR('danger'))
@@ -587,6 +648,12 @@ class MarkItDownApp:
                                text_color=C('text'))
             val.pack(side=tk.LEFT)
             self._quality_value_labels[key] = val
+
+        # 当前选中的文件 (联动回执行点击)
+        self._quality_file_var = tk.StringVar(value="")
+        ctk.CTkLabel(inner, textvariable=self._quality_file_var,
+                     font=ctk.CTkFont(family=FONT, size=11),
+                     text_color=C('muted')).pack(side=tk.RIGHT)
 
     def _update_quality_panel(self, markdown: str):
         try:
@@ -836,6 +903,32 @@ class MarkItDownApp:
         if added:
             self._refresh_list()
 
+    def _add_url(self):
+        if self.running:
+            return
+        dialog = ctk.CTkInputDialog(
+            title="添加链接", text="输入网页链接 (http/https):",
+            font=ctk.CTkFont(family=FONT, size=12),
+            fg_color=C('bg'),
+            button_fg_color=C('primary'),
+            button_hover_color=C('primary_hover'),
+            button_text_color=C('primary_text'),
+            entry_fg_color=C('card'),
+            entry_border_color=C('border'),
+            entry_text_color=C('text'),
+        )
+        url = (dialog.get_input() or "").strip()
+        if not url:
+            return
+        if not is_url(url):
+            messagebox.showwarning(
+                "链接无效", "请输入以 http:// 或 https:// 开头的链接。",
+                parent=self.root)
+            return
+        if url not in self.file_paths:
+            self.file_paths.append(url)
+            self._refresh_list()
+
     def _remove_selected(self):
         if self.running:
             return
@@ -853,7 +946,8 @@ class MarkItDownApp:
     def _refresh_list(self):
         self._listbox.delete(0, tk.END)
         for p in self.file_paths:
-            self._listbox.insert(tk.END, " " + os.path.basename(p))
+            display = p if is_url(p) else os.path.basename(p)
+            self._listbox.insert(tk.END, " " + display)
         n = len(self.file_paths)
         self._queue_caption.configure(
             text=f"文件队列 ({n})" if n else "文件队列")
@@ -878,16 +972,24 @@ class MarkItDownApp:
         self.results_text.config(state=tk.DISABLED)
         self.open_all_btn.grid_remove()
         self._result_folders.clear()
+        self._file_results.clear()
+        self._selected_idx = None
+        self._link_seq = 0
+        self._quality_file_var.set("")
+        self._set_preview("转换完成后在这里预览 Markdown", placeholder=True)
         self._clear_quality_panel()
         self._clear_image_gallery()
 
-    def _append_result(self, text: str, tag: str, folder: str | None = None):
+    def _append_result(self, text: str, tag: str, folder: str | None = None,
+                       line_tag: str | None = None):
         if not self.root.winfo_exists():
             return
         self.results_text.config(state=tk.NORMAL)
+        line_start = self.results_text.index("end-1c")
         if folder:
             self.results_text.insert(tk.END, text + "  ", tag)
-            tag_name = f"folder_{len(self._result_folders)}"
+            self._link_seq += 1
+            tag_name = f"folder_{self._link_seq}"
             self.results_text.tag_config(tag_name, foreground=CR('accent'),
                                          underline=True)
             self.results_text.tag_bind(
@@ -905,6 +1007,9 @@ class MarkItDownApp:
             self.results_text.insert(tk.END, "[打开]", tag_name)
         else:
             self.results_text.insert(tk.END, text, tag)
+        if line_tag:
+            self.results_text.tag_add(line_tag, line_start,
+                                      self.results_text.index("end-1c"))
         self.results_text.insert(tk.END, "\n")
         self.results_text.see(tk.END)
         self.results_text.config(state=tk.DISABLED)
@@ -975,6 +1080,32 @@ class MarkItDownApp:
         appearance_seg.set(appearance_rev.get(
             _config_get("appearance") or "system", "跟随系统"))
         appearance_seg.pack(anchor=tk.W, pady=(4, 0))
+
+        # ---- 同名输出 ----
+        section("同名输出")
+        hint("输出目录已存在时如何处理")
+        conflict_map = {"加序号": "rename", "覆盖": "overwrite",
+                        "跳过": "skip"}
+        conflict_rev = {v: k for k, v in conflict_map.items()}
+
+        def on_conflict_change(label):
+            if not _config_set("on_conflict", conflict_map[label]):
+                messagebox.showerror("错误", "保存设置失败", parent=dialog)
+
+        conflict_seg = ctk.CTkSegmentedButton(
+            body, values=list(conflict_map),
+            command=on_conflict_change,
+            font=ctk.CTkFont(family=FONT, size=12),
+            selected_color=('#D6D0C4', '#4A4438'),
+            selected_hover_color=('#CFC9BD', '#554E40'),
+            unselected_color=C('select'),
+            unselected_hover_color=C('ghost_hover'),
+            text_color=C('text'),
+            fg_color=C('select'),
+        )
+        conflict_seg.set(conflict_rev.get(
+            _config_get("on_conflict") or "rename", "加序号"))
+        conflict_seg.pack(anchor=tk.W, pady=(6, 0))
 
         # ---- PyMuPDF ----
         section("PDF 图片提取 (PyMuPDF)")
@@ -1161,9 +1292,13 @@ class MarkItDownApp:
         ok_count = 0
         warn_count = 0
         fail_count = 0
+        skip_count = 0
         md = MarkItDown()  # 复用实例
         output_root = _config_get("output_dir") or None
         use_pymupdf = _config_get("pymupdf_accepted") is True
+        on_conflict = _config_get("on_conflict") or "rename"
+        # URL 源没有"源文件所在目录", 默认收进 ~/Documents/doc2md
+        url_root = output_root or str(Path.home() / "Documents" / "doc2md")
 
         for i, fp in enumerate(file_paths):
             if self.cancel_event.is_set():
@@ -1172,14 +1307,15 @@ class MarkItDownApp:
                 self.root.after(0, self._on_all_done, i, total, True)
                 return
 
-            filename = os.path.basename(fp)
+            filename = fp if is_url(fp) else os.path.basename(fp)
             self.root.after(0, self._append_result,
                             f"→ {filename} ...", "progress")
 
             t0 = time.time()
             try:
-                result = convert_one(fp, output_root, md=md,
-                                     use_pymupdf=use_pymupdf)
+                result = convert_one(fp, url_root if is_url(fp) else output_root,
+                                     md=md, use_pymupdf=use_pymupdf,
+                                     on_conflict=on_conflict)
                 elapsed = time.time() - t0
                 _LOG.debug("%s -> %s (%.1fs, %d images, warning=%s)",
                            filename, result["output_dir"], elapsed,
@@ -1189,7 +1325,7 @@ class MarkItDownApp:
                 _LOG.error("%s FAILED (%.1fs): %s\n%s",
                            filename, elapsed, e, traceback.format_exc())
                 result = {"ok": False, "output_dir": "", "image_count": 0,
-                          "warning": None, "error": str(e)}
+                          "warning": None, "error": str(e), "skipped": False}
 
             if self.cancel_event.is_set():
                 self.root.after(0, self._append_result,
@@ -1197,7 +1333,12 @@ class MarkItDownApp:
                 self.root.after(0, self._on_all_done, i, total, True)
                 return
 
-            if result["ok"]:
+            if result.get("skipped"):
+                skip_count += 1
+                self.root.after(0, self._append_result,
+                                f"↷  {filename}  —  已跳过 (输出已存在)",
+                                "progress", result["output_dir"])
+            elif result["ok"]:
                 markdown, images = _read_output(fp, result["output_dir"])
                 self.root.after(0, self._on_one_success,
                                 filename, result["output_dir"],
@@ -1219,6 +1360,8 @@ class MarkItDownApp:
         parts = [f"{ok_count} 成功"]
         if warn_count:
             parts.append(f"{warn_count} 需复查")
+        if skip_count:
+            parts.append(f"{skip_count} 跳过")
         if fail_count:
             parts.append(f"{fail_count} 失败")
         summary = f"完成: {', '.join(parts)}"
@@ -1244,18 +1387,56 @@ class MarkItDownApp:
         if self.cancel_event.is_set():
             return
         self._result_folders.append(folder)
+        idx = len(self._file_results)
+        self._file_results.append({
+            "filename": filename, "folder": folder,
+            "markdown": markdown, "images": images or [],
+            "warning": warning,
+        })
         msg = f"✓  {filename}  →  {os.path.basename(folder)}"
         if img_count:
             msg += f"  ({img_count} 张图片)"
         if warning:
             msg += f"  — {warning}"
-            self._append_result(msg, "warn", folder=folder)
+            self._append_result(msg, "warn", folder=folder,
+                                line_tag=f"file_{idx}")
         else:
-            self._append_result(msg, "ok", folder=folder)
-        if markdown:
-            self._update_quality_panel(markdown)
-        if images and _HAS_PIL:
-            self._update_image_gallery(images)
+            self._append_result(msg, "ok", folder=folder,
+                                line_tag=f"file_{idx}")
+        self.results_text.tag_bind(
+            f"file_{idx}", "<Button-1>",
+            lambda _e, i=idx: self._select_result(i))
+        self._select_result(idx)
+
+    def _select_result(self, idx: int):
+        """回执行点击 → 质量条/图片条/预览切换到该文件。"""
+        if idx < 0 or idx >= len(self._file_results):
+            return
+        self._selected_idx = idx
+        rec = self._file_results[idx]
+
+        # 选中行高亮 (背景垫底, 不盖语义色)
+        self.results_text.tag_remove("selline", "1.0", tk.END)
+        rng = self.results_text.tag_ranges(f"file_{idx}")
+        if rng:
+            self.results_text.tag_config("selline",
+                                         background=CR('select'))
+            self.results_text.tag_add("selline", rng[0], rng[1])
+            self.results_text.tag_lower("selline")
+
+        name = rec["filename"]
+        if len(name) > 40:
+            name = name[:38] + "…"
+        self._quality_file_var.set(name)
+
+        if rec["markdown"]:
+            self._update_quality_panel(rec["markdown"])
+            self._set_preview(rec["markdown"])
+        else:
+            self._clear_quality_panel()
+            self._set_preview("(空输出)", placeholder=True)
+        if _HAS_PIL:
+            self._update_image_gallery(rec["images"])
 
     def _on_all_done(self, done: int, total: int, cancelled: bool):
         if not self.root.winfo_exists():

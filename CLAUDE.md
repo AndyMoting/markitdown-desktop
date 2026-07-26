@@ -10,7 +10,7 @@
 - `CHANGELOG.md` 每版必记
 - 先写计划
 - 新建 venv 后先 `pip install -r requirements.txt`，否则所有文件都报 ModuleNotFoundError
-- `convert_one` 签名: `(filepath, output_root=None, md=None, use_pymupdf=True)`，*md* 传入复用的 MarkItDown 实例
+- `convert_one` 签名: `(filepath, output_root=None, md=None, use_pymupdf=True, on_conflict="rename")`，*md* 传入复用的 MarkItDown 实例；*filepath* 可为 http(s) URL
 - 改 GUI 前先读 `.interface-design/system.md`（设计决策已定）和
   `.claude/skills/interface-design`；显示中文的组件禁用 Segoe UI/Consolas（无 CJK 字形）
 - GUI 验证用 scratchpad 的 PrintWindow 截图脚本实看，不要只跑不看
@@ -59,6 +59,7 @@ GUI 的 config/logs 在 `%APPDATA%\doc2md\`。
 | v1.0.0 | 首次正式发布 | done |
 | v2.0.0 | 平铺脚本 → doc2md 包 + pyproject 入口点 | done |
 | v2.1.0 | 重启：GUI 回归（CustomTkinter 双主题双栏工作台）+ 解除归档 | done |
+| v2.2.0 | 同名输出策略 + URL 转换 + 回执行联动 + Markdown 预览 | done |
 
 ## 改名记录 (2026-06-07)
 
