@@ -303,6 +303,13 @@ class MarkItDownApp:
     def _on_close(self):
         """任何一步失败都必须关窗 — pythonw 下异常静默, 卡住等于假死。"""
         try:
+            # 保险: 释放任何残留的 grab (grab 悬挂 = 全应用假死)
+            current = self.root.grab_current()
+            if current is not None:
+                current.grab_release()
+        except Exception:
+            pass
+        try:
             self.cancel_event.set()
             if self.running and self._thread and self._thread.is_alive():
                 self._thread.join(timeout=2)  # 线程是 daemon, 超时直接放弃
@@ -827,11 +834,15 @@ class MarkItDownApp:
         images = self._gallery_images
         total = len(images)
 
+        # 非模态 + 单例 (grab 悬挂会锁死整个应用, 见 _open_settings)
+        if getattr(self, "_viewer_win", None) is not None \
+                and self._viewer_win.winfo_exists():
+            self._viewer_win.destroy()
         dialog = ctk.CTkToplevel(self.root)
+        self._viewer_win = dialog
         dialog.title("图片查看器")
         dialog.transient(self.root)
         dialog.configure(fg_color=C('bg'))
-        dialog.after(200, dialog.grab_set)
 
         img_label = ctk.CTkLabel(dialog, text="")
         img_label.pack(padx=12, pady=(12, 4))
@@ -1072,13 +1083,22 @@ class MarkItDownApp:
         return p if len(p) <= limit else p[:22] + "…" + p[-23:]
 
     def _open_settings(self):
-        """设置窗 — Win11/macOS 式设置行: 左标题+副注, 右控件, 行入分组卡。"""
+        """设置窗 — Win11/macOS 式设置行: 左标题+副注, 右控件, 行入分组卡。
+
+        非模态 (Win11 设置同款): 不用 grab — grab 悬挂会把整个应用锁死
+        (主窗点不动/关不掉), 且 after 延迟 grab_set 有销毁竞态。
+        """
+        if getattr(self, "_settings_win", None) is not None \
+                and self._settings_win.winfo_exists():
+            self._settings_win.lift()
+            self._settings_win.focus_force()
+            return
         dialog = ctk.CTkToplevel(self.root)
+        self._settings_win = dialog
         dialog.title("设置")
         dialog.resizable(False, False)
         dialog.transient(self.root)
         dialog.configure(fg_color=C('bg'))
-        dialog.after(200, dialog.grab_set)
 
         body = ctk.CTkFrame(dialog, fg_color="transparent", width=600)
         body.pack(fill=tk.BOTH, padx=24, pady=(18, 16))
