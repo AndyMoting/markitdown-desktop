@@ -78,12 +78,15 @@ def CR(key: str) -> str:
 FONT = "Microsoft YaHei UI"
 
 # 字体优先级: 苹方 > 思源黑体(Noto) > 雅黑。运行时解析 (需要 Tk 已创建)。
+# FONT_MED: 标题/按钮用真 Medium 字重 — 合成加粗 (weight=bold 但没装 Bold
+# 字体) 是毛边的最大来源, 禁止对中文用 weight="bold"。
 _FONT_CANDIDATES = ["PingFang SC", "苹方-简", "Noto Sans SC",
                     "Source Han Sans SC", "Microsoft YaHei UI"]
+FONT_MED = FONT
 
 
 def _resolve_font():
-    global FONT
+    global FONT, FONT_MED
     from tkinter import font as tkfont
     try:
         families = set(tkfont.families())
@@ -92,7 +95,9 @@ def _resolve_font():
     for name in _FONT_CANDIDATES:
         if name in families:
             FONT = name
-            return
+            break
+    medium = f"{FONT} Medium"
+    FONT_MED = medium if medium in families else FONT
 
 
 # ============================================================
@@ -381,7 +386,7 @@ class MarkItDownApp:
             width=width or (len(text) * 14 + 16), height=26,
             fg_color="transparent", hover_color=C('ghost_hover'),
             text_color=C('accent') if accent else C('muted'),
-            font=ctk.CTkFont(family=FONT, size=12),
+            font=ctk.CTkFont(family=FONT, size=13),
             corner_radius=6,
         )
 
@@ -400,7 +405,7 @@ class MarkItDownApp:
                                       weight="bold"),
                      text_color=C('text')).pack(side=tk.LEFT)
         ctk.CTkLabel(header, text="喂给 AI 的文档预处理器",
-                     font=ctk.CTkFont(family=FONT, size=12),
+                     font=ctk.CTkFont(family=FONT, size=13),
                      text_color=C('muted')).pack(side=tk.LEFT,
                                                  padx=(12, 0), pady=(6, 0))
         self._ghost_btn(header, "设置", self._open_settings).pack(
@@ -416,7 +421,7 @@ class MarkItDownApp:
         cap_row.grid(row=0, column=0, sticky=tk.EW, pady=(0, 6))
         self._queue_caption = ctk.CTkLabel(
             cap_row, text="文件队列",
-            font=ctk.CTkFont(family=FONT, size=12, weight="bold"),
+            font=ctk.CTkFont(family=FONT_MED, size=13),
             text_color=C('muted'))
         self._queue_caption.pack(side=tk.LEFT)
         self._ghost_btn(cap_row, "＋ 文件", self._add_files,
@@ -431,7 +436,7 @@ class MarkItDownApp:
 
         self._listbox = tk.Listbox(
             list_card, selectmode=tk.EXTENDED,
-            font=(FONT, 10), relief=tk.FLAT, borderwidth=0,
+            font=(FONT, 12), relief=tk.FLAT, borderwidth=0,
             highlightthickness=0, activestyle='none',
         )
         self._listbox.pack(side=tk.LEFT, fill=tk.BOTH, expand=True,
@@ -450,7 +455,7 @@ class MarkItDownApp:
         self._empty_hint = tk.Label(
             list_card,
             text="将文件或文件夹\n拖到这里\n\n或点击右上角「＋ 文件」",
-            font=(FONT, 11), justify=tk.CENTER, cursor='hand2',
+            font=(FONT, 12), justify=tk.CENTER, cursor='hand2',
         )
         self._empty_hint.drop_target_register("*")
         self._empty_hint.dnd_bind("<<Drop>>", self._on_drop)
@@ -467,7 +472,7 @@ class MarkItDownApp:
         self.convert_btn = ctk.CTkButton(
             left, text="开始转换", command=self._on_convert_click,
             height=46, corner_radius=10,
-            font=ctk.CTkFont(family=FONT, size=15, weight="bold"),
+            font=ctk.CTkFont(family=FONT_MED, size=15),
             fg_color=C('primary'), hover_color=C('primary_hover'),
             text_color=C('primary_text'), text_color_disabled=C('muted'),
         )
@@ -484,7 +489,7 @@ class MarkItDownApp:
                                padx=(0, 10))
         self.progress_var = tk.StringVar(value="0 / 0")
         ctk.CTkLabel(progress_row, textvariable=self.progress_var,
-                     font=ctk.CTkFont(family=FONT, size=11),
+                     font=ctk.CTkFont(family=FONT, size=12),
                      text_color=C('muted')).pack(side=tk.RIGHT)
 
         # ---- 右列: 转换回执 ----
@@ -498,10 +503,10 @@ class MarkItDownApp:
         right_cap = ctk.CTkFrame(right, fg_color="transparent")
         right_cap.grid(row=0, column=0, sticky=tk.EW, pady=(0, 6))
         ctk.CTkLabel(right_cap, text="转换结果",
-                     font=ctk.CTkFont(family=FONT, size=12, weight="bold"),
+                     font=ctk.CTkFont(family=FONT_MED, size=13),
                      text_color=C('muted')).pack(side=tk.LEFT)
         seg_style = dict(
-            font=ctk.CTkFont(family=FONT, size=12), height=26,
+            font=ctk.CTkFont(family=FONT, size=13), height=26,
             selected_color=('#D6D0C4', '#4A4438'),
             selected_hover_color=('#CFC9BD', '#554E40'),
             unselected_color=C('select'),
@@ -521,8 +526,8 @@ class MarkItDownApp:
 
         self.results_text = tk.Text(
             self._results_card, wrap=tk.WORD, state=tk.DISABLED,
-            font=(FONT, 10), relief=tk.FLAT, borderwidth=0,
-            highlightthickness=0, padx=12, pady=10, spacing3=4,
+            font=(FONT, 12), relief=tk.FLAT, borderwidth=0,
+            highlightthickness=0, padx=12, pady=10, spacing3=7,
         )
         self.results_text.pack(side=tk.LEFT, fill=tk.BOTH, expand=True,
                                padx=(2, 0), pady=2)
@@ -542,8 +547,8 @@ class MarkItDownApp:
 
         self.preview_text = tk.Text(
             self._preview_card, wrap=tk.WORD, state=tk.DISABLED,
-            font=(FONT, 10), relief=tk.FLAT, borderwidth=0,
-            highlightthickness=0, padx=12, pady=10, spacing3=2,
+            font=(FONT, 12), relief=tk.FLAT, borderwidth=0,
+            highlightthickness=0, padx=12, pady=10, spacing3=4,
         )
         self.preview_text.pack(side=tk.LEFT, fill=tk.BOTH, expand=True,
                                padx=(2, 0), pady=2)
@@ -567,7 +572,7 @@ class MarkItDownApp:
         self.open_all_btn = ctk.CTkButton(
             right, text="打开所有文件夹", command=self._open_all_folders,
             height=34, corner_radius=8,
-            font=ctk.CTkFont(family=FONT, size=12),
+            font=ctk.CTkFont(family=FONT, size=13),
             fg_color="transparent", hover_color=C('ghost_hover'),
             border_width=1, border_color=C('border'),
             text_color=C('text'),
@@ -581,7 +586,7 @@ class MarkItDownApp:
                                   corner_radius=0, height=26)
         status_bar.grid(row=2, column=0, columnspan=2, sticky=tk.EW)
         ctk.CTkLabel(status_bar, textvariable=self._status_var,
-                     font=ctk.CTkFont(family=FONT, size=11),
+                     font=ctk.CTkFont(family=FONT, size=12),
                      text_color=C('muted')).pack(side=tk.LEFT, padx=14)
 
     # ------ 回执/预览 视图切换 ------
@@ -620,7 +625,7 @@ class MarkItDownApp:
         self.results_text.tag_config("fail", foreground=CR('danger'))
         self.results_text.tag_config("progress", foreground=muted)
         self.results_text.tag_config("summary", foreground=text,
-                                     font=(FONT, 10, "bold"))
+                                     font=(FONT_MED, 12))
         # 已有的 [打开] 链接 tag 重新上色
         for tag in self.results_text.tag_names():
             if tag.startswith("folder_"):
@@ -652,7 +657,7 @@ class MarkItDownApp:
         inner.pack(fill=tk.X, padx=12, pady=7)
 
         ctk.CTkLabel(inner, text="质量",
-                     font=ctk.CTkFont(family=FONT, size=12),
+                     font=ctk.CTkFont(family=FONT, size=13),
                      text_color=C('muted')).pack(side=tk.LEFT)
         self._quality_score_label = ctk.CTkLabel(
             inner, textvariable=self._quality_score_var,
@@ -673,12 +678,11 @@ class MarkItDownApp:
             ("images", "图片", self._quality_images_var),
         ]:
             ctk.CTkLabel(inner, text=cap,
-                         font=ctk.CTkFont(family=FONT, size=12),
+                         font=ctk.CTkFont(family=FONT, size=13),
                          text_color=C('muted')).pack(side=tk.LEFT,
                                                      padx=(12, 4))
             val = ctk.CTkLabel(inner, textvariable=var,
-                               font=ctk.CTkFont(family=FONT, size=12,
-                                                weight="bold"),
+                               font=ctk.CTkFont(family=FONT_MED, size=13),
                                text_color=C('text'))
             val.pack(side=tk.LEFT)
             self._quality_value_labels[key] = val
@@ -686,7 +690,7 @@ class MarkItDownApp:
         # 当前选中的文件 (联动回执行点击)
         self._quality_file_var = tk.StringVar(value="")
         ctk.CTkLabel(inner, textvariable=self._quality_file_var,
-                     font=ctk.CTkFont(family=FONT, size=11),
+                     font=ctk.CTkFont(family=FONT, size=12),
                      text_color=C('muted')).pack(side=tk.RIGHT)
 
     def _update_quality_panel(self, markdown: str):
@@ -834,7 +838,7 @@ class MarkItDownApp:
 
         info_var = tk.StringVar()
         ctk.CTkLabel(dialog, textvariable=info_var,
-                     font=ctk.CTkFont(family=FONT, size=12),
+                     font=ctk.CTkFont(family=FONT, size=13),
                      text_color=C('muted')).pack()
 
         nav_frame = ctk.CTkFrame(dialog, fg_color="transparent")
@@ -842,7 +846,7 @@ class MarkItDownApp:
 
         prev_btn = ctk.CTkButton(nav_frame, text="上一张", width=80,
                                  height=30,
-                                 font=ctk.CTkFont(family=FONT, size=12),
+                                 font=ctk.CTkFont(family=FONT, size=13),
                                  fg_color="transparent",
                                  hover_color=C('ghost_hover'),
                                  border_width=1, border_color=C('border'),
@@ -851,7 +855,7 @@ class MarkItDownApp:
 
         next_btn = ctk.CTkButton(nav_frame, text="下一张", width=80,
                                  height=30,
-                                 font=ctk.CTkFont(family=FONT, size=12),
+                                 font=ctk.CTkFont(family=FONT, size=13),
                                  fg_color="transparent",
                                  hover_color=C('ghost_hover'),
                                  border_width=1, border_color=C('border'),
@@ -859,7 +863,7 @@ class MarkItDownApp:
         next_btn.pack(side=tk.LEFT, padx=4)
 
         ctk.CTkButton(nav_frame, text="关闭", width=64, height=30,
-                      font=ctk.CTkFont(family=FONT, size=12),
+                      font=ctk.CTkFont(family=FONT, size=13),
                       fg_color=C('primary'), hover_color=C('primary_hover'),
                       text_color=C('primary_text'),
                       command=dialog.destroy).pack(side=tk.LEFT, padx=4)
@@ -942,7 +946,7 @@ class MarkItDownApp:
             return
         dialog = ctk.CTkInputDialog(
             title="添加链接", text="输入网页链接 (http/https):",
-            font=ctk.CTkFont(family=FONT, size=12),
+            font=ctk.CTkFont(family=FONT, size=13),
             fg_color=C('bg'),
             button_fg_color=C('primary'),
             button_hover_color=C('primary_hover'),
@@ -1081,8 +1085,7 @@ class MarkItDownApp:
 
         def group(title, first=False):
             ctk.CTkLabel(body, text=title,
-                         font=ctk.CTkFont(family=FONT, size=12,
-                                          weight="bold"),
+                         font=ctk.CTkFont(family=FONT_MED, size=13),
                          text_color=C('muted')).pack(
                 anchor=tk.W, pady=((0 if first else 14), 6))
             card = ctk.CTkFrame(body, fg_color=C('card'), corner_radius=10,
@@ -1097,10 +1100,10 @@ class MarkItDownApp:
             txt = ctk.CTkFrame(r, fg_color="transparent")
             txt.pack(side=tk.LEFT, fill=tk.X, expand=True)
             ctk.CTkLabel(txt, text=title, anchor="w",
-                         font=ctk.CTkFont(family=FONT, size=13),
+                         font=ctk.CTkFont(family=FONT_MED, size=14),
                          text_color=C('text')).pack(anchor=tk.W)
             sub_kw = dict(anchor="w",
-                          font=ctk.CTkFont(family=FONT, size=11),
+                          font=ctk.CTkFont(family=FONT, size=12),
                           text_color=C('muted'))
             if subtitle_var is not None:
                 ctk.CTkLabel(txt, textvariable=subtitle_var,
@@ -1112,7 +1115,7 @@ class MarkItDownApp:
             return ctrl
 
         seg_kw = dict(
-            font=ctk.CTkFont(family=FONT, size=12), height=26,
+            font=ctk.CTkFont(family=FONT, size=13), height=26,
             selected_color=('#D6D0C4', '#4A4438'),
             selected_hover_color=('#CFC9BD', '#554E40'),
             unselected_color=C('select'),
@@ -1128,7 +1131,7 @@ class MarkItDownApp:
         )
         btn_kw = dict(
             height=28, corner_radius=8,
-            font=ctk.CTkFont(family=FONT, size=12),
+            font=ctk.CTkFont(family=FONT, size=13),
             fg_color="transparent", hover_color=C('ghost_hover'),
             border_width=1, border_color=C('border'),
             text_color=C('text'),
@@ -1196,7 +1199,7 @@ class MarkItDownApp:
         doc_ok = doc_engine.is_available()
         c = row(conv, "旧版 Word 文档 (.doc)", "aspose-words-foss · MIT")
         ctk.CTkLabel(c, text="已就绪" if doc_ok else "不可用",
-                     font=ctk.CTkFont(family=FONT, size=12, weight="bold"),
+                     font=ctk.CTkFont(family=FONT_MED, size=13),
                      text_color=C('success') if doc_ok
                      else C('danger')).pack()
 
@@ -1294,7 +1297,7 @@ class MarkItDownApp:
         footer.pack(fill=tk.X, pady=(14, 0))
         ctk.CTkButton(footer, text="关闭", width=80, height=30,
                       corner_radius=8,
-                      font=ctk.CTkFont(family=FONT, size=12),
+                      font=ctk.CTkFont(family=FONT, size=13),
                       fg_color=C('primary'),
                       hover_color=C('primary_hover'),
                       text_color=C('primary_text'),
