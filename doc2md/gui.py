@@ -240,6 +240,7 @@ class MarkItDownApp:
         self._file_results: list[dict] = []
         self._selected_idx: int | None = None
         self._link_seq = 0
+        self._receipt_placeholder = False
 
         self.root.title(f"doc2md v{VERSION}")
         self.root.resizable(True, True)
@@ -351,7 +352,7 @@ class MarkItDownApp:
         """文字按钮 — 次级操作, 透明底 + hover 微底色。"""
         return ctk.CTkButton(
             parent, text=text, command=command,
-            width=width or (len(text) * 14 + 16), height=28,
+            width=width or (len(text) * 14 + 16), height=26,
             fg_color="transparent", hover_color=C('ghost_hover'),
             text_color=C('accent') if accent else C('muted'),
             font=ctk.CTkFont(family=FONT, size=12),
@@ -392,10 +393,10 @@ class MarkItDownApp:
             font=ctk.CTkFont(family=FONT, size=12, weight="bold"),
             text_color=C('muted'))
         self._queue_caption.pack(side=tk.LEFT)
-        self._ghost_btn(cap_row, "＋ 添加文件", self._add_files,
+        self._ghost_btn(cap_row, "＋ 文件", self._add_files,
                         accent=True).pack(side=tk.RIGHT)
-        self._ghost_btn(cap_row, "添加链接", self._add_url).pack(
-            side=tk.RIGHT, padx=(0, 2))
+        self._ghost_btn(cap_row, "＋ 链接", self._add_url).pack(
+            side=tk.RIGHT, padx=(0, 4))
 
         list_card = ctk.CTkFrame(left, fg_color=C('card'), corner_radius=10,
                                  border_width=1, border_color=C('border'))
@@ -422,7 +423,7 @@ class MarkItDownApp:
         # 空态提示 (盖在列表中央, 有文件时隐藏)
         self._empty_hint = tk.Label(
             list_card,
-            text="将文件或文件夹\n拖到这里\n\n或点击「添加文件」",
+            text="将文件或文件夹\n拖到这里\n\n或点击右上角「＋ 文件」",
             font=(FONT, 10), justify=tk.CENTER, cursor='hand2',
         )
         self._empty_hint.drop_target_register("*")
@@ -467,6 +468,12 @@ class MarkItDownApp:
         right.grid_rowconfigure(1, weight=1)
         right.grid_columnconfigure(0, weight=1)
 
+        # caption 行与左列对称: 标题居左, 视图段选居右
+        right_cap = ctk.CTkFrame(right, fg_color="transparent")
+        right_cap.grid(row=0, column=0, sticky=tk.EW, pady=(0, 6))
+        ctk.CTkLabel(right_cap, text="转换结果",
+                     font=ctk.CTkFont(family=FONT, size=12, weight="bold"),
+                     text_color=C('muted')).pack(side=tk.LEFT)
         seg_style = dict(
             font=ctk.CTkFont(family=FONT, size=12), height=26,
             selected_color=('#D6D0C4', '#4A4438'),
@@ -476,10 +483,10 @@ class MarkItDownApp:
             text_color=C('text'), fg_color=C('select'),
         )
         self._view_seg = ctk.CTkSegmentedButton(
-            right, values=["转换回执", "预览"],
+            right_cap, values=["回执", "预览"],
             command=self._on_view_change, **seg_style)
-        self._view_seg.set("转换回执")
-        self._view_seg.grid(row=0, column=0, sticky=tk.W, pady=(0, 6))
+        self._view_seg.set("回执")
+        self._view_seg.pack(side=tk.RIGHT)
 
         self._results_card = ctk.CTkFrame(right, fg_color=C('card'),
                                           corner_radius=10, border_width=1,
@@ -614,6 +621,7 @@ class MarkItDownApp:
         strip = ctk.CTkFrame(parent, fg_color=C('card'), corner_radius=10,
                              border_width=1, border_color=C('border'))
         strip.grid(row=2, column=0, sticky=tk.EW, pady=(8, 0))
+        self._quality_strip = strip
         inner = ctk.CTkFrame(strip, fg_color="transparent")
         inner.pack(fill=tk.X, padx=12, pady=7)
 
@@ -969,7 +977,12 @@ class MarkItDownApp:
     def _clear_results(self):
         self.results_text.config(state=tk.NORMAL)
         self.results_text.delete("1.0", tk.END)
+        self.results_text.insert(
+            tk.END, "转换回执将显示在这里\n完成后可切到「预览」查看 Markdown",
+            "progress")
         self.results_text.config(state=tk.DISABLED)
+        self._receipt_placeholder = True
+        self._quality_strip.grid_remove()
         self.open_all_btn.grid_remove()
         self._result_folders.clear()
         self._file_results.clear()
@@ -985,6 +998,9 @@ class MarkItDownApp:
         if not self.root.winfo_exists():
             return
         self.results_text.config(state=tk.NORMAL)
+        if self._receipt_placeholder:
+            self.results_text.delete("1.0", tk.END)
+            self._receipt_placeholder = False
         line_start = self.results_text.index("end-1c")
         if folder:
             self.results_text.insert(tk.END, text + "  ", tag)
@@ -1414,6 +1430,7 @@ class MarkItDownApp:
             return
         self._selected_idx = idx
         rec = self._file_results[idx]
+        self._quality_strip.grid()
 
         # 选中行高亮 (背景垫底, 不盖语义色)
         self.results_text.tag_remove("selline", "1.0", tk.END)
