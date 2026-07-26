@@ -1,6 +1,8 @@
 # doc2md（原 InkDrop）
 
-项目已归档。GUI 与打包设施已移除，现存形态是 `doc2md` CLI 包。
+活跃维护中（2026-07-26 重启，曾于 2026-06 归档，验证记录见 复盘.md）。
+形态：`doc2md` Python 包 = CLI 核心 + CustomTkinter GUI（`doc2md-gui`）。
+已决策：不做 Web 方向；FastAPI 旧线只留在 backup/web-gui-0721 分支。
 
 ## 铁律
 
@@ -9,26 +11,32 @@
 - 先写计划
 - 新建 venv 后先 `pip install -r requirements.txt`，否则所有文件都报 ModuleNotFoundError
 - `convert_one` 签名: `(filepath, output_root=None, md=None, use_pymupdf=True)`，*md* 传入复用的 MarkItDown 实例
+- 改 GUI 前先读 `.interface-design/system.md`（设计决策已定）和
+  `.claude/skills/interface-design`；显示中文的组件禁用 Segoe UI/Consolas（无 CJK 字形）
+- GUI 验证用 scratchpad 的 PrintWindow 截图脚本实看，不要只跑不看
 
 ## 运行环境
 
 - venv: `D:\Projects\.venv\Scripts\python.exe`（Python 3.12）
 - 依赖见 `requirements.txt`。PyMuPDF (AGPL) 已隔离在 `doc2md/engines/pdf.py`（懒加载），可替换；其余 MIT/BSD。
 
-## 当前状态（2026-07-26）
+## 当前状态（2026-07-26, v2.1.0）
 
 ```
 markitdown-desktop/
-├── doc2md/             # Python 包（结构见 README §5）
-├── pyproject.toml      # 打包与入口点（doc2md 命令）
+├── doc2md/                  # Python 包（cli/gui/convert/images/quality/engines）
+├── .interface-design/       # GUI 设计系统（改 UI 先读）
+├── .claude/skills/          # interface-design 项目 skill
+├── pyproject.toml           # 入口点: doc2md / doc2md-gui；extras: pdf/doc/gui/all
 ├── requirements.txt
-├── README.md           # 对外
-├── CHANGELOG.md        # 对内，每版必记
-└── CLAUDE.md           # 本文件
+├── README.md                # 对外
+├── CHANGELOG.md             # 对内，每版必记
+└── CLAUDE.md                # 本文件
 ```
 
-运行：仓库根 `python -m doc2md file.pdf`，或 `pip install .` 后 `doc2md file.pdf`。
-历史（GUI versions/releases、PyInstaller、CI）全部在 Git 记录里。
+运行：仓库根 `python -m doc2md file.pdf`（CLI）/ `python -m doc2md.gui`（GUI）。
+GUI 的 config/logs 在 `%APPDATA%\doc2md\`。
+历史（InkDrop GUI versions/releases、PyInstaller、CI）全部在 Git 记录里。
 
 ## 版本历史
 
@@ -49,6 +57,8 @@ markitdown-desktop/
 | v13 | _convert_one 拆分为 6 函数 + MarkItDown 实例复用 + 去死代码 | done |
 | v14 | 自定义输出目录、config 移 exe 同级 | done |
 | v1.0.0 | 首次正式发布 | done |
+| v2.0.0 | 平铺脚本 → doc2md 包 + pyproject 入口点 | done |
+| v2.1.0 | 重启：GUI 回归（CustomTkinter 双主题双栏工作台）+ 解除归档 | done |
 
 ## 改名记录 (2026-06-07)
 

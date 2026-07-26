@@ -1,5 +1,37 @@
 # CHANGELOG
 
+## v2.1.0 — 2026-07-26
+
+**重启**: 解除归档, 桌面 GUI 回归 (`doc2md/gui.py`, `doc2md-gui` 入口)。
+
+- 从 backup/web-gui-0721 分支移植 tkinter GUI (v14 血统), 砍掉其内嵌的旧转换
+  实现 (~570 行, 与 doc2md 包重复), 转换统一走 `convert_one`; markdown/图片
+  从输出目录读回供质量条/图片条用
+- UI 全面重做 (`.claude/skills/interface-design` 纪律, 决策见
+  `.interface-design/system.md`):
+  - CustomTkinter 6.0: 圆角卡片、hover 动效、深浅双主题 (跟随系统/浅色/深色,
+    设置内切换), 纸墨配色 (暖纸/墨室 + 墨条按钮 + 深青强调)
+  - 结构: 三按钮工具栏 + Notebook 标签页 → 双栏工作台 (左队列/右回执),
+    质量面板压成单行质量条, 次级操作降为文字按钮, 去掉全部 emoji 图标
+  - 修 v14 遗留布局 bug: pack 顺序导致状态栏/图片条/打开按钮被 expand 组件
+    挤出窗口 (改 grid + grid_remove)
+  - 中文字体统一 Microsoft YaHei UI (Segoe UI/Consolas 无 CJK 字形会掉宋体)
+- `doc2md/quality.py` 增加 `check_quality()`/`QualityReport` (从 backup 分支
+  inkdrop/quality.py 移植, 纯函数)
+- config/日志挪到 `%APPDATA%\doc2md\` (config/ + logs/), 新增 appearance 配置
+- 砍掉: magika/sniffer shim (PyInstaller 遗留)、`--convert` headless 模式
+  (CLI 已有)、"保存到工具目录" checkbox (被自定义输出目录覆盖)
+- pyproject: `doc2md-gui` gui-scripts 入口, `[gui]` extra
+  (customtkinter + tkinterdnd2 + Pillow), `[all]` 含 gui
+- 项目解除归档: README 重写, 复盘.md 原样保留
+- 新增项目 skill `.claude/skills/interface-design`
+  (Dammyjay93/interface-design, MIT, 附 tkinter 适配说明)
+
+**验证**: PrintWindow 截图 (浅/深主题 + 设置窗) + GUI 内真实转换 PDF 全链路;
+CLI 回归 `python -m doc2md test_sample.pdf` 行为不变。
+
+---
+
 ## v2.0.0 — 2026-07-26
 
 **重构**: 平铺脚本 → `doc2md` Python 包。
