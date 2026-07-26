@@ -10,6 +10,11 @@ from PyInstaller.utils.hooks import collect_data_files, collect_all
 
 _aspose_resources = []
 _tnd_all = collect_all('tkinterdnd2')
+
+# Collect inkdrop templates + static files
+_inkdrop_templates = collect_data_files('inkdrop', includes=['templates/*'])
+_inkdrop_static = collect_data_files('inkdrop', includes=['static/*'])
+
 for _d in site.getsitepackages():
     _blank = Path(_d) / 'aspose' / 'words_foss' / 'docx_writer' / 'resources' / 'blank.docx'
     if _blank.exists():
@@ -19,9 +24,9 @@ for _d in site.getsitepackages():
         break
 
 a = Analysis(
-    ['inkdrop_gui.py'],              # <-- entry point for v2.0 GUI
+    ['inkdrop_desktop.py'],          # <-- entry point: pywebview + FastAPI
     pathex=[],
-    datas=_aspose_resources + _tnd_all[0],
+    datas=_aspose_resources + _tnd_all[0] + _inkdrop_templates + _inkdrop_static,
     binaries=_tnd_all[1],
     hiddenimports=list(set(_tnd_all[2]) - {'tkinterdnd2'}) + [
         'fitz', 'pymupdf',                        # PDF engine (PyMuPDF)
@@ -30,6 +35,8 @@ a = Analysis(
         'aspose.words_foss',                       # .doc conversion
         'tkinterdnd2', 'tkinterdnd2.TkinterDnD',   # drag-and-drop
         'PIL', 'PIL.Image', 'PIL.ImageTk',         # image gallery
+        'webview', 'pywebview',                    # desktop shell
+        'bottle',                                   # pywebview dep
     ],
     hookspath=[],
     hooksconfig={},
@@ -54,7 +61,7 @@ exe = EXE(
     bootloader_ignore_signals=False,
     strip=False,
     upx=True,                                      # UPX compresses if available
-    console=False,                                 # --windowed (no console)
+    console=True,                                  # --console (debug)
     disable_windowed_traceback=False,
     argv_emulation=False,
     target_arch=None,
