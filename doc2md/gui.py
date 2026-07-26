@@ -77,6 +77,23 @@ def CR(key: str) -> str:
 
 FONT = "Microsoft YaHei UI"
 
+# 字体优先级: 苹方 > 思源黑体(Noto) > 雅黑。运行时解析 (需要 Tk 已创建)。
+_FONT_CANDIDATES = ["PingFang SC", "苹方-简", "Noto Sans SC",
+                    "Source Han Sans SC", "Microsoft YaHei UI"]
+
+
+def _resolve_font():
+    global FONT
+    from tkinter import font as tkfont
+    try:
+        families = set(tkfont.families())
+    except Exception:
+        return
+    for name in _FONT_CANDIDATES:
+        if name in families:
+            FONT = name
+            return
+
 
 # ============================================================
 #  1. config  配置读写 (%APPDATA%\doc2md\)
@@ -231,6 +248,7 @@ def _read_output(filepath: str, output_dir: str) -> tuple[str, list[str]]:
 
 class MarkItDownApp:
     def __init__(self, root):
+        _resolve_font()
         self.root = root
         self.file_paths: list[str] = []
         self._thread: threading.Thread | None = None
@@ -405,7 +423,7 @@ class MarkItDownApp:
 
         self._listbox = tk.Listbox(
             list_card, selectmode=tk.EXTENDED,
-            font=(FONT, 9), relief=tk.FLAT, borderwidth=0,
+            font=(FONT, 10), relief=tk.FLAT, borderwidth=0,
             highlightthickness=0, activestyle='none',
         )
         self._listbox.pack(side=tk.LEFT, fill=tk.BOTH, expand=True,
@@ -424,7 +442,7 @@ class MarkItDownApp:
         self._empty_hint = tk.Label(
             list_card,
             text="将文件或文件夹\n拖到这里\n\n或点击右上角「＋ 文件」",
-            font=(FONT, 10), justify=tk.CENTER, cursor='hand2',
+            font=(FONT, 11), justify=tk.CENTER, cursor='hand2',
         )
         self._empty_hint.drop_target_register("*")
         self._empty_hint.dnd_bind("<<Drop>>", self._on_drop)
@@ -495,7 +513,7 @@ class MarkItDownApp:
 
         self.results_text = tk.Text(
             self._results_card, wrap=tk.WORD, state=tk.DISABLED,
-            font=(FONT, 9), relief=tk.FLAT, borderwidth=0,
+            font=(FONT, 10), relief=tk.FLAT, borderwidth=0,
             highlightthickness=0, padx=12, pady=10, spacing3=4,
         )
         self.results_text.pack(side=tk.LEFT, fill=tk.BOTH, expand=True,
@@ -516,7 +534,7 @@ class MarkItDownApp:
 
         self.preview_text = tk.Text(
             self._preview_card, wrap=tk.WORD, state=tk.DISABLED,
-            font=(FONT, 9), relief=tk.FLAT, borderwidth=0,
+            font=(FONT, 10), relief=tk.FLAT, borderwidth=0,
             highlightthickness=0, padx=12, pady=10, spacing3=2,
         )
         self.preview_text.pack(side=tk.LEFT, fill=tk.BOTH, expand=True,
@@ -594,7 +612,7 @@ class MarkItDownApp:
         self.results_text.tag_config("fail", foreground=CR('danger'))
         self.results_text.tag_config("progress", foreground=muted)
         self.results_text.tag_config("summary", foreground=text,
-                                     font=(FONT, 9, "bold"))
+                                     font=(FONT, 10, "bold"))
         # 已有的 [打开] 链接 tag 重新上色
         for tag in self.results_text.tag_names():
             if tag.startswith("folder_"):
@@ -778,7 +796,7 @@ class MarkItDownApp:
             name = os.path.basename(img_path)
             if len(name) > 12:
                 name = name[:10] + "…"
-            tk.Label(frame, text=name, font=(FONT, 7),
+            tk.Label(frame, text=name, font=(FONT, 8),
                      bg=card, fg=CR('muted')).pack()
 
         self._gallery_frame.grid()
