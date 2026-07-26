@@ -296,14 +296,22 @@ class MarkItDownApp:
         self.root.geometry(f"{w}x{h}+{x}+{y}")
 
     def _on_close(self):
-        self.cancel_event.set()
-        if self.running and self._thread and self._thread.is_alive():
-            self._thread.join(timeout=10)
-        if self.root.state() not in ("zoomed", "iconic"):
-            _config_set("geometry", self.root.geometry())
-        else:
-            _config_set("geometry", "")
-        self.root.destroy()
+        """任何一步失败都必须关窗 — pythonw 下异常静默, 卡住等于假死。"""
+        try:
+            self.cancel_event.set()
+            if self.running and self._thread and self._thread.is_alive():
+                self._thread.join(timeout=2)  # 线程是 daemon, 超时直接放弃
+            if self.root.state() not in ("zoomed", "iconic"):
+                _config_set("geometry", self.root.geometry())
+            else:
+                _config_set("geometry", "")
+        except Exception:
+            _LOG.error("关窗前清理失败", exc_info=True)
+        try:
+            self.root.destroy()
+        except Exception:
+            _LOG.error("destroy 失败, 强制退出", exc_info=True)
+            os._exit(0)
 
     # ------ 拖拽 ------
 
